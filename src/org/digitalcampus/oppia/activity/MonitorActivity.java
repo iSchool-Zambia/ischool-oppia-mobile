@@ -27,7 +27,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.utils.ConnectionUtils;
 import org.digitalcampus.oppia.utils.storage.FileUtils;
 

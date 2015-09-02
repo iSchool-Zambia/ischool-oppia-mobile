@@ -26,7 +26,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.mobile.quiz.Quiz;
 import org.digitalcampus.oppia.model.QuizFeedback;
 

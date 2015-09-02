@@ -44,7 +44,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.adapter.CourseListAdapter;
 import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;

@@ -10,7 +10,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.utils.storage.FileUtils;
 
 import java.io.File;

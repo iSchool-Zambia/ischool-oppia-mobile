@@ -25,7 +25,7 @@ import java.io.InputStreamReader;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.listener.APIRequestListener;
 import org.digitalcampus.oppia.utils.HTTPConnectionUtils;
 

@@ -29,7 +29,7 @@ import android.util.Log;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.params.CoreProtocolPNames;
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.application.MobileLearning;
 import org.digitalcampus.oppia.listener.InstallCourseListener;

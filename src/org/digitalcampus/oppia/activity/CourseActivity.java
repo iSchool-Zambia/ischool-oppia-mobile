@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.adapter.ActivityPagerAdapter;
 import org.digitalcampus.oppia.adapter.SectionListAdapter;
 import org.digitalcampus.oppia.application.MobileLearning;

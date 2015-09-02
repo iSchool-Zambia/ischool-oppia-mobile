@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.adapter.SectionListAdapter;
 import org.digitalcampus.oppia.exception.InvalidXMLException;
 import org.digitalcampus.oppia.model.Activity;

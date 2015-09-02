@@ -19,7 +19,7 @@ package org.digitalcampus.oppia.adapter;
 
 import java.util.ArrayList;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.listener.ListInnerBtnOnClickListener;
 import org.digitalcampus.oppia.model.Media;
 

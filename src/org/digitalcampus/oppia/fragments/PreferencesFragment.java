@@ -5,7 +5,7 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.model.Lang;
 import org.digitalcampus.oppia.utils.storage.StorageLocationInfo;

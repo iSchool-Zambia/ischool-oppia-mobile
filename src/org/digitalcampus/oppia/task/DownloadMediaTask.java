@@ -28,7 +28,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.http.client.ClientProtocolException;
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.listener.DownloadMediaListener;
 import org.digitalcampus.oppia.model.DownloadProgress;

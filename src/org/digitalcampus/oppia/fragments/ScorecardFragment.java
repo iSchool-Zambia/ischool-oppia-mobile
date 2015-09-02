@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.mobile.quiz.Quiz;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.adapter.CourseQuizzesGridAdapter;

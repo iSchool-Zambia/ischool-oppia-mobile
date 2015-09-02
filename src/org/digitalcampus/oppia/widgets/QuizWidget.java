@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.mobile.quiz.InvalidQuizException;
 import org.digitalcampus.mobile.quiz.Quiz;
 import org.digitalcampus.mobile.quiz.model.QuizQuestion;

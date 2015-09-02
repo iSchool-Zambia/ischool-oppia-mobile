@@ -23,7 +23,7 @@ import android.preference.PreferenceManager;
 import android.webkit.WebView;
 import android.widget.TextView;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.model.Course;
 import org.digitalcampus.oppia.model.CourseMetaPage;
 import org.digitalcampus.oppia.utils.storage.FileUtils;

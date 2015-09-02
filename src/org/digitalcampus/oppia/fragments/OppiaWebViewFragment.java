@@ -17,7 +17,7 @@
 
 package org.digitalcampus.oppia.fragments;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 
 import android.content.SharedPreferences;

@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.mobile.quiz.Quiz;
 import org.digitalcampus.mobile.quiz.model.Response;
 import org.digitalcampus.oppia.activity.PrefsActivity;

@@ -19,7 +19,7 @@ package org.digitalcampus.oppia.activity;
 
 import java.util.ArrayList;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.fragments.PreferencesFragment;
 import org.digitalcampus.oppia.listener.MoveStorageListener;
 import org.digitalcampus.oppia.task.ChangeStorageOptionTask;

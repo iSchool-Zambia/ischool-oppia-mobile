@@ -22,7 +22,7 @@ import android.view.MenuItem;
 
 import java.util.ArrayList;
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.application.ScheduleReminders;
 
 

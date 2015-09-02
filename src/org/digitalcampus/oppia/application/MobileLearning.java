@@ -18,7 +18,7 @@
 package org.digitalcampus.oppia.application;
 
 
-import org.digitalcampus.mobile.learning.R;
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.task.SubmitQuizTask;
 import org.digitalcampus.oppia.task.SubmitTrackerMultipleTask;
