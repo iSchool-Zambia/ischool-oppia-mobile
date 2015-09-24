@@ -18,12 +18,9 @@
 package org.digitalcampus.oppia.fragments;
 
 import java.util.ArrayList;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.ischool.zambia.oppia.R;
-import org.digitalcampus.mobile.quiz.Quiz;
+
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.adapter.CourseQuizzesGridAdapter;
 import org.digitalcampus.oppia.adapter.ScorecardListAdapter;
@@ -68,6 +65,8 @@ public class ScorecardFragment extends Fragment implements ParseCourseXMLTask.On
     private TextView highlightPretest;
     private TextView highlightAttempted;
     private TextView highlightPassed;
+    private TextView activitiesTotal;
+    private TextView activitiesCompleted;
     private ProgressBar quizzesProgressBar;
     private View quizzesView;
     private View quizzesContainer;
@@ -91,10 +90,11 @@ public class ScorecardFragment extends Fragment implements ParseCourseXMLTask.On
         super.onCreate(savedInstanceState);
         if ( getArguments() != null && getArguments().containsKey(Course.TAG)) {
             this.course = (Course) getArguments().getSerializable(Course.TAG);
-
+        
             xmlTask = new ParseCourseXMLTask(getActivity(), true);
             xmlTask.setListener(this);
             xmlTask.execute(course);
+            
         }
     }
 
@@ -121,6 +121,8 @@ public class ScorecardFragment extends Fragment implements ParseCourseXMLTask.On
             quizzesProgressBar = (ProgressBar) vv.findViewById(R.id.progress_quizzes);
             quizzesView = vv.findViewById(R.id.quizzes_view);
             quizzesContainer = vv.findViewById(R.id.scorecard_quizzes_container);
+            activitiesTotal = (TextView)vv.findViewById(R.id.scorecard_activities_total);
+            activitiesCompleted = (TextView) vv.findViewById(R.id.scorecard_activities_completed);
 
 		} else {
 			vv = super.getLayoutInflater(savedInstanceState).inflate(R.layout.fragment_scorecards, null);
@@ -143,8 +145,10 @@ public class ScorecardFragment extends Fragment implements ParseCourseXMLTask.On
 		if(this.course != null){
 
 			ScorecardPieChart spc = new ScorecardPieChart(super.getActivity(), scorecardPieChart, this.course);
-            spc.drawChart(50, true, firstTimeOpened);
+            spc.drawChart(0, false, firstTimeOpened);
             firstTimeOpened = false;
+            activitiesTotal.setText(""+course.getNoActivities());
+            activitiesCompleted.setText(""+course.getNoActivitiesCompleted());
 
             quizzesAdapter = new CourseQuizzesGridAdapter(getActivity(), quizStats);
             quizzesGrid.setAdapter(quizzesAdapter);
@@ -163,77 +167,44 @@ public class ScorecardFragment extends Fragment implements ParseCourseXMLTask.On
     //@Override
     public void onParseComplete(CourseXMLReader parsed) {
 
-        ArrayList<Activity> activities = parsed.getActivities(course.getCourseId());
         ArrayList<Activity> baseline = parsed.getBaselineActivities();
-        ArrayList<QuizStats> stats = new ArrayList<QuizStats>();
-        int pretestScore = -1, quizzesAttempted = 0, quizzesPassed = 0;
-
-        String prefLang = prefs.getString(PrefsActivity.PREF_LANGUAGE, Locale.getDefault().getLanguage());
-        Pattern quizDataPattern = Pattern.compile(QuizStats.fromCourseXMLRegex);
-        Matcher matcher = quizDataPattern.matcher("");
-        //Fallback for the JSONs where there is not threshold property present
-        Pattern simpleQuizDataPattern = Pattern.compile(QuizStats.fromCourseXMLRegexSimple);
-        Matcher simpleMatcher = simpleQuizDataPattern.matcher("");
-
-        for (Activity act : activities){
-            if (!act.getActType().equals("quiz")) continue;
-            String contents = act.getContents(prefLang);
-            matcher.reset(contents);
-
-            if (matcher.find()){
-                QuizStats quiz = new QuizStats();
-                quiz.setQuizId(Integer.parseInt(matcher.group(QuizStats.COURSEXML_MATCHER_QUIZID)));
-                quiz.setPassThreshold(Integer.parseInt(matcher.group(QuizStats.COURSEXML_MATCHER_THRESHOLD)));
-                stats.add(quiz);
-            }
-            else{
-                simpleMatcher.reset(contents);
-                if (simpleMatcher.find()){
-                    QuizStats quiz = new QuizStats();
-                    quiz.setQuizId(Integer.parseInt(matcher.group(QuizStats.COURSEXML_MATCHER_QUIZID)));
-                    quiz.setPassThreshold(Quiz.QUIZ_DEFAULT_PASS_THRESHOLD);
-                    stats.add(quiz);
-                }
-            }
+        
+    	DbHelper db = new DbHelper(super.getActivity());
+        long userId = db.getUserId(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
+        ArrayList<Activity> quizActs = db.getCourseQuizzes(course.getCourseId());
+        ArrayList<QuizStats> quizzes = new ArrayList<QuizStats>();
+        for (Activity a: quizActs){
+        	// get the max score for the quiz for the user
+        	QuizStats qs = db.getQuizAttempt(a.getDigest(), userId);
+        	quizzes.add(qs);
         }
+        DatabaseManager.getInstance().closeDatabase();
+    	
+        int quizzesAttempted = 0, quizzesPassed = 0;
 
+        for (QuizStats qs: quizzes){
+        	if (qs.isAttempted()){
+        		quizzesAttempted++;
+        	}
+        	if (qs.isPassed()){
+        		quizzesPassed++;
+        	}
+        }
+        
+        int pretestScore = -1;
+        for (Activity baselineAct : baseline){
+            if (!baselineAct.getActType().equals("quiz")) continue;
+            QuizStats pretest = db.getQuizAttempt(baselineAct.getDigest(), userId);
+            pretestScore = pretest.getPercent();
+        }
+        
         quizStats.clear();
-        quizStats.addAll(stats);
-
+        quizStats.addAll(quizzes);
         if (quizStats.size() == 0){
             quizzesContainer.setVisibility(View.GONE);
             return;
         }
-
-        DbHelper db = new DbHelper(super.getActivity());
-        long userId = db.getUserId(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
-        db.getCourseQuizResults(quizStats, course.getCourseId(), userId);
-        DatabaseManager.getInstance().closeDatabase();
-
-        for (Activity baselineAct : baseline){
-            if (!baselineAct.getActType().equals("quiz")) continue;
-            String contents = baselineAct.getContents(prefLang);
-            matcher.reset(contents);
-            if (!matcher.find()) continue;
-
-            for (QuizStats quiz : quizStats){
-                int quizID = Integer.parseInt(matcher.group(QuizStats.COURSEXML_MATCHER_QUIZID));
-                //If is a baseline quiz, we remove it from the list
-                if (quiz.getQuizId() == quizID ){
-                    quizStats.remove(quiz);
-                    pretestScore = quiz.getPercent();
-                    break;
-                }
-            }
-        }
-
-        for (QuizStats quiz : quizStats){
-            if (quiz.isAttempted()){
-                quizzesAttempted++;
-                if (quiz.isPassed()) quizzesPassed++;
-            }
-        }
-
+        
         highlightPretest.setText(pretestScore >= 0 ? (pretestScore + "%") : "-");
         highlightAttempted.setText("" + quizzesAttempted);
         highlightPassed.setText("" + quizzesPassed);
