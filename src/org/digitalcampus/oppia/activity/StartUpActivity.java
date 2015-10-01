@@ -41,6 +41,7 @@ import org.digitalcampus.oppia.listener.PostInstallListener;
 import org.digitalcampus.oppia.listener.UpgradeListener;
 import org.digitalcampus.oppia.model.DownloadProgress;
 import org.digitalcampus.oppia.model.User;
+import org.digitalcampus.oppia.service.TrackerService;
 import org.digitalcampus.oppia.task.InstallDownloadedCoursesTask;
 import org.digitalcampus.oppia.task.Payload;
 import org.digitalcampus.oppia.task.PostInstallTask;
@@ -83,7 +84,7 @@ public class StartUpActivity extends Activity implements UpgradeListener, PostIn
     }
 	
 	private void endStartUpScreen() {
-		
+		/* ischool specific start */
 		try {
 			ISchool.loginUser(this);
 		} catch (ISchoolLoginException isle){
@@ -99,6 +100,15 @@ public class StartUpActivity extends Activity implements UpgradeListener, PostIn
 			builder.show();
 			return;
 		}
+		
+		// start the service to register user(s)
+		Intent service = new Intent(this, TrackerService.class);
+
+		Bundle tb = new Bundle();
+		tb.putBoolean("backgroundData", true);
+		service.putExtras(tb);
+		this.startService(service);
+		/* ischool specific end */
 		
         // launch new activity and close splash screen
 		if (!MobileLearning.isLoggedIn(this)) {

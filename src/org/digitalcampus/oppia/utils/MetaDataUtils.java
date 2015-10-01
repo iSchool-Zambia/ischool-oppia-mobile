@@ -88,13 +88,13 @@ public class MetaDataUtils {
 		if(prefs.getBoolean(PrefsActivity.PREF_METADATA + "_NETWORK", false)){
 			json.put("network",this.getNetworkProvider());
 		}
+		
+		/* ischool specific start */
 		/*
-		if(prefs.getBoolean(PrefsActivity.PREF_METADATA + "_DEVICE_ID", false)){
-			json.put("deviceid",this.getDeviceId());
-		}
 		Use the iSchool device id instead
 		*/
 		json.put("device_id",ISchool.deviceId);
+		/* ischool specific end */
 		
 		if(prefs.getBoolean(PrefsActivity.PREF_METADATA+ "_SIM_SERIAL", false)){
 			json.put("simserial",this.getSimSerial());

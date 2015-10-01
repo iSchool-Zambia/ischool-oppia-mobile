@@ -467,6 +467,7 @@ public class DbHelper extends SQLiteOpenHelper {
 		}
 	}
 	
+	/* ischool specific start */
 	public long addUser(User user) {
 		ContentValues values = new ContentValues();
 		values.put(USER_C_USERNAME, user.getUsername());
@@ -475,6 +476,26 @@ public class DbHelper extends SQLiteOpenHelper {
 		values.put(USER_C_PASSWORDENCRYPTED, user.getPasswordEncrypted());
 		return db.insertOrThrow(USER_TABLE, null, values);
 	}
+	
+	public ArrayList<User> getUnregisteredUsers(){
+		ArrayList<User> users = new ArrayList<User>();
+		String s = USER_C_APIKEY + " is null";
+		//String[] args = new String[] { "" };
+		Cursor c = db.query(USER_TABLE, null, s, null, null, null, null);
+		c.moveToFirst();
+		while (c.isAfterLast() == false) {
+			Log.d(TAG,"found unregistered user: "+ c.getString(c.getColumnIndex(USER_C_USERNAME)));
+			User u = new User();
+			u.setUsername(c.getString(c.getColumnIndex(USER_C_USERNAME)));
+			u.setFirstname(c.getString(c.getColumnIndex(USER_C_FIRSTNAME)));
+			u.setLastname(c.getString(c.getColumnIndex(USER_C_LASTNAME)));
+			users.add(u);
+			c.moveToNext();
+		}
+		c.close();
+		return users;
+	}
+	/* ischool specific end */
 	
 	public int getCourseID(String shortname){
 		String s = COURSE_C_SHORTNAME + "=?";

@@ -233,7 +233,9 @@ public class OppiaMobileActivity extends AppActivity implements OnSharedPreferen
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		UIUtils.showUserData(menu,this, null);
 		MenuItem item = menu.findItem(R.id.menu_logout);
-		item.setVisible(prefs.getBoolean(PrefsActivity.PREF_LOGOUT_ENABLED, false));
+		/* ischool specific start */
+		item.setVisible(false);
+		/* ischool specific end */
 	    return super.onPrepareOptionsMenu(menu);
 	}
 	

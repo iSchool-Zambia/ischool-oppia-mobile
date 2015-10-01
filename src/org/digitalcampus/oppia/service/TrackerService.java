@@ -21,7 +21,9 @@ import java.util.ArrayList;
 
 import org.ischool.zambia.oppia.R;
 import org.ischool.zambia.oppia.listeners.RegisterISchoolUserListener;
+import org.ischool.zambia.oppia.tasks.RegisterISchoolUsersTask;
 import org.digitalcampus.oppia.activity.DownloadActivity;
+import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
@@ -97,14 +99,16 @@ public class TrackerService extends Service implements APIRequestListener, Regis
 				editor.commit();
 			}
 
+			/* ischool specific start */
 			// register any new users on the device
 			// this needs to complete before any trackers/quizzes can be sent back
 			
-			
-			
-
-			
-
+			RegisterISchoolUsersTask task = new RegisterISchoolUsersTask(this);
+			task.setRegisterListener(this);
+			p = new Payload(prefs.getString(PrefsActivity.PREF_SERVER, this.getString(R.string.prefServerDefault))
+					+ MobileLearning.REGISTER_PATH);
+			task.execute(p);
+			/* ischool specific end */
 		}
 		return Service.START_NOT_STICKY;
 	}
