@@ -19,6 +19,7 @@ package org.digitalcampus.oppia.utils;
 import java.util.Iterator;
 
 import org.digitalcampus.oppia.activity.PrefsActivity;
+import org.ischool.zambia.oppia.application.ISchool;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -87,9 +88,14 @@ public class MetaDataUtils {
 		if(prefs.getBoolean(PrefsActivity.PREF_METADATA + "_NETWORK", false)){
 			json.put("network",this.getNetworkProvider());
 		}
+		/*
 		if(prefs.getBoolean(PrefsActivity.PREF_METADATA + "_DEVICE_ID", false)){
 			json.put("deviceid",this.getDeviceId());
 		}
+		Use the iSchool device id instead
+		*/
+		json.put("device_id",ISchool.deviceId);
+		
 		if(prefs.getBoolean(PrefsActivity.PREF_METADATA+ "_SIM_SERIAL", false)){
 			json.put("simserial",this.getSimSerial());
 		}

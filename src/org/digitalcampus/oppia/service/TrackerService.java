@@ -20,6 +20,7 @@ package org.digitalcampus.oppia.service;
 import java.util.ArrayList;
 
 import org.ischool.zambia.oppia.R;
+import org.ischool.zambia.oppia.listeners.RegisterISchoolUserListener;
 import org.digitalcampus.oppia.activity.DownloadActivity;
 import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
@@ -54,7 +55,7 @@ import android.util.Log;
 
 import com.splunk.mint.Mint;
 
-public class TrackerService extends Service implements APIRequestListener {
+public class TrackerService extends Service implements APIRequestListener, RegisterISchoolUserListener {
 
 	public static final String TAG = TrackerService.class.getSimpleName();
 
@@ -96,27 +97,11 @@ public class TrackerService extends Service implements APIRequestListener {
 				editor.commit();
 			}
 
-			// send activity trackers
-			MobileLearning app = (MobileLearning) this.getApplication();
-			if(app.omSubmitTrackerMultipleTask == null){
-				Log.d(TAG,"Submitting trackers multiple task");
-				app.omSubmitTrackerMultipleTask = new SubmitTrackerMultipleTask(this);
-				app.omSubmitTrackerMultipleTask.execute();
-			}
+			// register any new users on the device
+			// this needs to complete before any trackers/quizzes can be sent back
 			
-			// send quiz results
-			if(app.omSubmitQuizAttemptsTask == null){
-				Log.d(TAG,"Submitting quiz task");
-				DbHelper db = new DbHelper(this);
-				ArrayList<QuizAttempt> unsent = db.getUnsentQuizAttempts();
-				DatabaseManager.getInstance().closeDatabase();
-		
-				if (unsent.size() > 0){
-					p = new Payload(unsent);
-					app.omSubmitQuizAttemptsTask = new SubmitQuizAttemptsTask(this);
-					app.omSubmitQuizAttemptsTask.execute(p);
-				}
-			}
+			
+			
 
 			
 
@@ -199,6 +184,32 @@ public class TrackerService extends Service implements APIRequestListener {
 			notification.flags |= Notification.FLAG_AUTO_CANCEL;
 			notificationManager.notify(mId, notification);
 		}
+	}
+
+	@Override
+	public void registerRequestComplete(Payload response) {
+		// send activity trackers
+		MobileLearning app = (MobileLearning) this.getApplication();
+		if(app.omSubmitTrackerMultipleTask == null){
+			Log.d(TAG,"Submitting trackers multiple task");
+			app.omSubmitTrackerMultipleTask = new SubmitTrackerMultipleTask(this);
+			app.omSubmitTrackerMultipleTask.execute();
+		}
+		
+		// send quiz results
+		if(app.omSubmitQuizAttemptsTask == null){
+			Log.d(TAG,"Submitting quiz task");
+			DbHelper db = new DbHelper(this);
+			ArrayList<QuizAttempt> unsent = db.getUnsentQuizAttempts();
+			DatabaseManager.getInstance().closeDatabase();
+	
+			if (unsent.size() > 0){
+				Payload p = new Payload(unsent);
+				app.omSubmitQuizAttemptsTask = new SubmitQuizAttemptsTask(this);
+				app.omSubmitQuizAttemptsTask.execute(p);
+			}
+		}
+		
 	}
 
 

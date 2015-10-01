@@ -467,6 +467,14 @@ public class DbHelper extends SQLiteOpenHelper {
 		}
 	}
 	
+	public long addUser(User user) {
+		ContentValues values = new ContentValues();
+		values.put(USER_C_USERNAME, user.getUsername());
+		values.put(USER_C_FIRSTNAME, user.getFirstname());
+		values.put(USER_C_LASTNAME, user.getLastname());
+		values.put(USER_C_PASSWORDENCRYPTED, user.getPasswordEncrypted());
+		return db.insertOrThrow(USER_TABLE, null, values);
+	}
 	
 	public int getCourseID(String shortname){
 		String s = COURSE_C_SHORTNAME + "=?";

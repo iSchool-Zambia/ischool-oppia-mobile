@@ -31,6 +31,8 @@ import android.widget.TextView;
 import com.splunk.mint.Mint;
 
 import org.ischool.zambia.oppia.R;
+import org.ischool.zambia.oppia.application.ISchool;
+import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
 import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
@@ -82,19 +84,25 @@ public class StartUpActivity extends Activity implements UpgradeListener, PostIn
 	
 	private void endStartUpScreen() {
 		
-		DbHelper db = new DbHelper(this);
-		ArrayList<User> users = db.getAllUsers();
-		DatabaseManager.getInstance().closeDatabase();
-		
-		for (User u: users){
-			Log.d(TAG, "username: " + u.getUsername());
-			Log.d(TAG, "points: " + u.getPoints());
-			Log.d(TAG, "badges: " + u.getBadges());
-			Log.d(TAG,"--------------");
+		try {
+			ISchool.loginUser(this);
+		} catch (ISchoolLoginException isle){
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setCancelable(false);
+			builder.setTitle(R.string.error);
+			builder.setMessage(R.string.ischool_error_fileread);
+			builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+					StartUpActivity.this.finish();
+				}
+			});
+			builder.show();
+			return;
 		}
 		
         // launch new activity and close splash screen
 		if (!MobileLearning.isLoggedIn(this)) {
+			// should never actually reach this
 			startActivity(new Intent(StartUpActivity.this, WelcomeActivity.class));
 			finish();
 		} else {
