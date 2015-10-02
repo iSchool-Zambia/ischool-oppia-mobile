@@ -231,11 +231,21 @@ public class OppiaMobileActivity extends AppActivity implements OnSharedPreferen
 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		UIUtils.showUserData(menu,this, null);
-		MenuItem item = menu.findItem(R.id.menu_logout);
-		/* ischool specific start */
-		item.setVisible(false);
-		/* ischool specific end */
+
+		UIUtils.showUserData(menu, this, null);
+		
+		MenuItem itemLogout = menu.findItem(R.id.menu_logout);
+		itemLogout.setVisible(MobileLearning.MENU_ALLOW_LOGOUT);
+		
+		MenuItem itemSettings = menu.findItem(R.id.menu_settings);
+		itemSettings.setVisible(MobileLearning.MENU_ALLOW_SETTINGS);
+		
+		MenuItem itemMonitor = menu.findItem(R.id.menu_monitor);
+		itemMonitor.setVisible(MobileLearning.MENU_ALLOW_MONITOR);
+		
+		MenuItem itemCourseDownload = menu.findItem(R.id.menu_download);
+		itemCourseDownload.setVisible(MobileLearning.MENU_ALLOW_COURSE_DOWNLOAD);
+		
 	    return super.onPrepareOptionsMenu(menu);
 	}
 	
