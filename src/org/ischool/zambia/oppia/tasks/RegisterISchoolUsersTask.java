@@ -75,7 +75,7 @@ public class RegisterISchoolUsersTask extends AsyncTask<Payload, Object, Payload
 				// actual password is irrelevant as won't be used
 				// email only needs to be unique within the OppiaServer, again actual email is irrelevant
 				UUID guid = java.util.UUID.randomUUID();
-				u.setEmail(u.getUsername().replace("/", "") + "@ischool.zm");
+				u.setEmail(u.getUsername() + "@ischool.zm");
 				u.setPassword(guid.toString());
 				
 				JSONObject json = new JSONObject();

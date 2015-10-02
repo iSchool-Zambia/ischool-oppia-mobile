@@ -42,7 +42,7 @@ public class ISchool extends Application {
 		User u = new User();
 		try {
 			String[] userDataArray = userData.split(";");
-			u.setUsername(userDataArray[0]);
+			u.setUsername(userDataArray[0].replace('/', '_'));
 			String[] userNameArray = userDataArray[1].split("_");
 			u.setFirstname(userNameArray[0]);
 			u.setLastname(userNameArray[1]);
