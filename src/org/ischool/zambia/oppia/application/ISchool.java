@@ -1,6 +1,7 @@
 package org.ischool.zambia.oppia.application;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import org.digitalcampus.oppia.activity.PrefsActivity;
@@ -23,16 +24,28 @@ public class ISchool extends Application {
 
 	public static String deviceId = "";
 	
-	private static String userDataFileLocation = "/storage/sdcard1/ischool.txt";
+	/* Set of locations to look for the login file/data */
+	private static String[] userDataFileLocation = new String[] {
+															"/storage/sdcard1/ischool.txt",
+															""};
 	
 	public static void loginUser(Context ctx) throws ISchoolLoginException {
 		// read data from the text file on system
 		
 		String userData = null;
-		try {
-			userData = FileUtils.readFile(userDataFileLocation);
-			Log.d(TAG,"data file content:" + userData);
-		} catch (IOException ioe ){
+		for (String location: userDataFileLocation){
+			try {
+				userData = FileUtils.readFile(location);
+				Log.d(TAG,"data file content:" + userData);
+				break;
+			} catch (IOException ioe ){
+				// just continue
+				Log.d(TAG, "No file found at: " + location);
+				continue;
+			}
+		}
+		
+		if (userData == null){
 			throw new ISchoolLoginException();
 		}
 		
