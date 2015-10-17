@@ -1,7 +1,6 @@
 package org.ischool.zambia.oppia.application;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.UUID;
 
 import org.digitalcampus.oppia.activity.PrefsActivity;
@@ -23,6 +22,8 @@ public class ISchool extends Application {
 	public static final String TAG = ISchool.class.getSimpleName();
 
 	public static String deviceId = "";
+	public static boolean ALLOW_CORE_LOGIN_SCREEN = true;
+	public static String USER_ID_FORMAT = "\\d{6}/\\d{2}/\\d{1}";
 	
 	/* Set of locations to look for the login file/data */
 	private static String[] userDataFileLocation = new String[] {
@@ -55,6 +56,11 @@ public class ISchool extends Application {
 		User u = new User();
 		try {
 			String[] userDataArray = userData.split(";");
+			
+			// validate user id format XXXXXX / XX / X     (six digits / two digits / single digit)
+			if(!userDataArray[0].matches(ISchool.USER_ID_FORMAT)){
+				throw new ISchoolLoginException();
+			}
 			u.setUsername(userDataArray[0].replace('/', '_'));
 			String[] userNameArray = userDataArray[1].split("_");
 			u.setFirstname(userNameArray[0]);
