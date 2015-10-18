@@ -33,6 +33,7 @@ import com.splunk.mint.Mint;
 import org.ischool.zambia.oppia.R;
 import org.ischool.zambia.oppia.application.ISchool;
 import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
+import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
 import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
@@ -88,16 +89,18 @@ public class StartUpActivity extends Activity implements UpgradeListener, PostIn
 		try {
 			ISchool.loginUser(this);
 		} catch (ISchoolLoginException isle){
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setCancelable(false);
-			builder.setTitle(R.string.error);
-			builder.setMessage(R.string.ischool_error_fileread);
-			builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int which) {
-					StartUpActivity.this.finish();
-				}
-			});
-			builder.show();
+			if (ISchool.ALLOW_CORE_LOGIN_SCREEN){
+				this.redirectToLogin(R.string.ischool_error_fileread_login);
+			} else {
+				this.closeApp(R.string.ischool_error_fileread);
+			}
+			return;
+		} catch (UserIdFormatException usfe) {
+			if (ISchool.ALLOW_CORE_LOGIN_SCREEN){
+				this.redirectToLogin(R.string.ischool_error_useridformat_login);
+			} else {
+				this.closeApp(R.string.ischool_error_useridformat);
+			}
 			return;
 		}
 		
@@ -121,6 +124,36 @@ public class StartUpActivity extends Activity implements UpgradeListener, PostIn
 		}
     }
 
+	/* ischool specific start */
+	private void closeApp(int messageId){
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setCancelable(false);
+		builder.setTitle(R.string.info);
+		builder.setMessage(messageId);
+		builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				StartUpActivity.this.finish();
+			}
+		});
+		builder.show();
+	}
+	
+	private void redirectToLogin(int messageId){
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setCancelable(false);
+		builder.setTitle(R.string.info);
+		builder.setMessage(messageId);
+		builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				startActivity(new Intent(StartUpActivity.this, WelcomeActivity.class));
+				StartUpActivity.this.finish();
+			}
+		});
+		builder.show();
+	}
+	/* ischool specific end */
+	
+	
 	private void installCourses(){
 		File dir = new File(FileUtils.getDownloadPath(this));
 		String[] children = dir.list();

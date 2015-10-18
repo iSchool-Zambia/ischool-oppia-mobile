@@ -86,6 +86,7 @@ public class RegisterISchoolUsersTask extends AsyncTask<Payload, Object, Payload
 	            json.put("firstname",u.getFirstname());
 	            json.put("lastname",u.getLastname());
 	            StringEntity se = new StringEntity(json.toString(),"utf8");
+	            Log.d(TAG,json.toString());
 	            se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 	            httpPost.setEntity(se);
 	

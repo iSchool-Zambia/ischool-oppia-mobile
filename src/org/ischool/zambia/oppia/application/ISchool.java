@@ -9,6 +9,7 @@ import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.model.User;
 import org.digitalcampus.oppia.utils.storage.FileUtils;
 import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
+import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
 
 import android.app.Application;
 import android.content.Context;
@@ -30,7 +31,7 @@ public class ISchool extends Application {
 															"/storage/sdcard1/ischool.txt",
 															""};
 	
-	public static void loginUser(Context ctx) throws ISchoolLoginException {
+	public static void loginUser(Context ctx) throws ISchoolLoginException, UserIdFormatException {
 		// read data from the text file on system
 		
 		String userData = null;
@@ -59,7 +60,7 @@ public class ISchool extends Application {
 			
 			// validate user id format XXXXXX / XX / X     (six digits / two digits / single digit)
 			if(!userDataArray[0].matches(ISchool.USER_ID_FORMAT)){
-				throw new ISchoolLoginException();
+				throw new UserIdFormatException();
 			}
 			u.setUsername(userDataArray[0].replace('/', '_'));
 			String[] userNameArray = userDataArray[1].split("_");
