@@ -15,6 +15,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -28,6 +29,7 @@ public class ISchool extends Application {
 	
 	/* Set of locations to look for the login file/data */
 	private static String[] userDataFileLocation = new String[] {
+															Environment.getExternalStorageDirectory().getAbsolutePath() + "/ischool.txt" ,
 															"/storage/sdcard0/ischool.txt",
 															"/storage/sdcard1/ischool.txt"};
 	
