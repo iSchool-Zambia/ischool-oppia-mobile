@@ -3,5 +3,7 @@
     <string name="ischool_error_fileread">Error reading login information from device.\n\nThe app will now close.</string>   
     <string name="ischool_error_useridformat">Your User ID does not appear to be in the required format.\n\nThe app will now close.</string> 
 	<string name="ischool_error_fileread_login">Error reading login information from device.\n\nYou will now be redirected to the login screen.</string>   
-    <string name="ischool_error_useridformat_login">Your User ID does not appear to be in the required format.\n\nYou will now be redirected to the login screen.</string> 
+    <string name="ischool_error_useridformat_login">Your User ID does not appear to be in the required format.\n\nYou will now be redirected to the login screen.</string>
+    
+    <string name="ischool_username">Logged in as: %1$s</string>  
 </resources>

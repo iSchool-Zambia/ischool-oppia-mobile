@@ -17,8 +17,11 @@
 
 package org.digitalcampus.oppia.activity;
 
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
@@ -26,7 +29,11 @@ import org.ischool.zambia.oppia.R;
 import org.ischool.zambia.oppia.application.ISchool;
 import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
 import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
+import org.digitalcampus.oppia.application.DatabaseManager;
+import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.ScheduleReminders;
+import org.digitalcampus.oppia.exception.UserNotFoundException;
+import org.digitalcampus.oppia.model.User;
 
 
 public class AppActivity extends FragmentActivity {
@@ -70,6 +77,29 @@ public class AppActivity extends FragmentActivity {
 			return;
 		} catch (UserIdFormatException usfe) {
 			return;
+		}
+		
+		try {
+			TextView uTV = (TextView) this.findViewById(R.id.ischool_username);
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+			DbHelper db = new DbHelper(this);
+			try {
+				User u = db.getUser(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
+				
+				String username;
+				if (u.getFirstname() != null && !u.getFirstname().equals("")){
+					username = u.getFirstname() + " " + u.getLastname();
+				} else {
+					username = u.getUsername();
+				}
+				uTV.setText(this.getString(R.string.ischool_username, username));
+			} catch (UserNotFoundException unfe){
+				
+			}
+			DatabaseManager.getInstance().closeDatabase();
+			
+		} catch (NullPointerException npe){
+			
 		}
 		/* ischool specific end */
 	}
