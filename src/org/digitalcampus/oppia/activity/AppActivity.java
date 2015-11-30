@@ -23,6 +23,9 @@ import android.view.MenuItem;
 import java.util.ArrayList;
 
 import org.ischool.zambia.oppia.R;
+import org.ischool.zambia.oppia.application.ISchool;
+import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
+import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
 import org.digitalcampus.oppia.application.ScheduleReminders;
 
 
@@ -56,4 +59,18 @@ public class AppActivity extends FragmentActivity {
 		return true;
 	}
 
+	
+	@Override
+	protected void onResume(){
+		super.onResume();
+		/* ischool specific start */
+		try {
+			ISchool.loginUser(this);
+		} catch (ISchoolLoginException isle){
+			return;
+		} catch (UserIdFormatException usfe) {
+			return;
+		}
+		/* ischool specific end */
+	}
 }

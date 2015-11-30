@@ -35,13 +35,12 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.view.MenuItem;
 
 
-public class ScorecardActivity extends FragmentActivity implements ActionBar.TabListener {
+public class ScorecardActivity extends AppActivity implements ActionBar.TabListener {
 
 	public static final String TAG = ScorecardActivity.class.getSimpleName();
     public static final String TAB_TARGET = "target";

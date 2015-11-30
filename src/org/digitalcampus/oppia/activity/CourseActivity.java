@@ -24,6 +24,9 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 
 import org.ischool.zambia.oppia.R;
+import org.ischool.zambia.oppia.application.ISchool;
+import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
+import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
 import org.digitalcampus.oppia.adapter.ActivityPagerAdapter;
 import org.digitalcampus.oppia.adapter.SectionListAdapter;
 import org.digitalcampus.oppia.application.MobileLearning;
@@ -155,6 +158,15 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 
     public void onResume(){
         super.onResume();
+        /* ischool specific start */
+		try {
+			ISchool.loginUser(this);
+		} catch (ISchoolLoginException isle){
+			return;
+		} catch (UserIdFormatException usfe) {
+			return;
+		}
+		/* ischool specific end */
         WidgetFactory currentWidget = (WidgetFactory) apAdapter.getItem(currentActivityNo);
         currentWidget.resumeTimeTracking();
     }
