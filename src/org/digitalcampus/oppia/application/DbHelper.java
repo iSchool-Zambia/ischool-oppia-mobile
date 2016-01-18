@@ -666,26 +666,68 @@ public class DbHelper extends SQLiteOpenHelper {
 		course.setNoActivities(c.getCount());
 		c.close();
 		
-		// get no completed
+		int noCompleted = 0;
+		int noStarted = 0;
+		// get number of non-quiz activities completed
 		String sqlCompleted = "SELECT DISTINCT " + TRACKER_LOG_C_ACTIVITYDIGEST + " FROM " + TRACKER_LOG_TABLE +
-						" WHERE " + TRACKER_LOG_C_COURSEID + "=" + course.getCourseId() + 
-						" AND " + TRACKER_LOG_C_USERID + "=" + userId +
-						" AND " + TRACKER_LOG_C_COMPLETED + "=1" +
-						" AND " + TRACKER_LOG_C_ACTIVITYDIGEST + " IN ( SELECT " + ACTIVITY_C_ACTIVITYDIGEST + " FROM " + ACTIVITY_TABLE + " WHERE " + ACTIVITY_C_COURSEID + "=" + course.getCourseId() + ")";
+								" WHERE " + TRACKER_LOG_C_COURSEID + "=" + course.getCourseId() + 
+								" AND " + TRACKER_LOG_C_USERID + "=" + userId +
+								" AND " + TRACKER_LOG_C_COMPLETED + "=1" +
+								" AND " + TRACKER_LOG_C_ACTIVITYDIGEST + " IN ( SELECT " + ACTIVITY_C_ACTIVITYDIGEST + " FROM " + ACTIVITY_TABLE + 
+								" WHERE " + ACTIVITY_C_COURSEID + "=" + course.getCourseId() + 
+								" AND " + ACTIVITY_C_ACTTYPE + "!= 'quiz'" +
+								")";
 		c = db.rawQuery(sqlCompleted,null);
-		course.setNoActivitiesCompleted(c.getCount());
+		noCompleted = c.getCount();
 		c.close();
 		
-		// get no started
+		// get number of non-quiz activities started
 		String sqlStarted = "SELECT DISTINCT " + TRACKER_LOG_C_ACTIVITYDIGEST + " FROM " + TRACKER_LOG_TABLE +
-				" WHERE " + TRACKER_LOG_C_COURSEID + "=" + course.getCourseId() + 
-				" AND " + TRACKER_LOG_C_USERID + "=" + userId +
-				" AND " + TRACKER_LOG_C_COMPLETED + "=0" +
-				" AND " + TRACKER_LOG_C_ACTIVITYDIGEST + " NOT IN (" + sqlCompleted + ")" +
-				" AND " + TRACKER_LOG_C_ACTIVITYDIGEST + " IN ( SELECT " + ACTIVITY_C_ACTIVITYDIGEST + " FROM " + ACTIVITY_TABLE + " WHERE " + ACTIVITY_C_COURSEID + "=" + course.getCourseId() + ")";
+							" WHERE " + TRACKER_LOG_C_COURSEID + "=" + course.getCourseId() + 
+							" AND " + TRACKER_LOG_C_USERID + "=" + userId +
+							" AND " + TRACKER_LOG_C_COMPLETED + "=0" +
+							" AND " + TRACKER_LOG_C_ACTIVITYDIGEST + " NOT IN (" + sqlCompleted + ")" +
+							" AND " + TRACKER_LOG_C_ACTIVITYDIGEST + " IN ( SELECT " + ACTIVITY_C_ACTIVITYDIGEST + " FROM " + ACTIVITY_TABLE + 
+							" WHERE " + ACTIVITY_C_COURSEID + "=" + course.getCourseId() + 
+							" AND " + ACTIVITY_C_ACTTYPE + "!= 'quiz'" +
+							")";
 		c = db.rawQuery(sqlStarted,null);
-		course.setNoActivitiesStarted(c.getCount());
+		noStarted = c.getCount();
 		c.close();
+		
+		
+		String sqlQuizzes = "SELECT " + ACTIVITY_C_ACTIVITYDIGEST + " FROM " + ACTIVITY_TABLE + 
+				" WHERE " + ACTIVITY_C_COURSEID + "=" + course.getCourseId() + 
+				" AND " + ACTIVITY_C_ACTTYPE + "== 'quiz'";
+		c = db.rawQuery(sqlQuizzes,null);
+		c.moveToFirst();
+		while (c.isAfterLast() == false) {
+			// get the first X attempts at this quiz
+			String sqlQuizAttempts = "";
+			boolean isCompleted = false;
+			
+			/*
+			Cursor q = db.rawQuery(sqlQuizAttempts,null);
+			q.moveToFirst();
+			while (q.isAfterLast() == false) {
+				 
+			}
+			if (isCompleted){
+				noCompleted ++;
+			} else if (q.getCount()>0){
+				noStarted++;
+			}
+			*/
+			
+			
+			c.moveToNext();
+		}
+		c.close();
+		
+		
+		
+		course.setNoActivitiesCompleted(noCompleted);
+		course.setNoActivitiesStarted(noCompleted);
 		
 		return course;
 	}
@@ -735,10 +777,12 @@ public class DbHelper extends SQLiteOpenHelper {
 		// find if attempted
 		String s1 = QUIZATTEMPTS_C_USERID + "=? AND " + QUIZATTEMPTS_C_ACTIVITY_DIGEST +"=?";
 		String[] args1 = new String[] { String.valueOf(userId), digest };
-		Cursor c1 = db.query(QUIZATTEMPTS_TABLE, null, s1, args1, null, null, null);
+
+		Cursor c1 = db.query(QUIZATTEMPTS_TABLE, null, s1, args1, null, null, QUIZATTEMPTS_C_DATETIME + " ASC", "3");
 		if (c1.getCount() == 0){
 			return qs;
 		}
+		
 		c1.moveToFirst();
 		while (c1.isAfterLast() == false) {
 			float userScore = c1.getFloat(c1.getColumnIndex(QUIZATTEMPTS_C_SCORE));
@@ -746,39 +790,17 @@ public class DbHelper extends SQLiteOpenHelper {
 				qs.setUserScore(userScore);
 			}
 			qs.setMaxScore(c1.getFloat(c1.getColumnIndex(QUIZATTEMPTS_C_MAXSCORE)));
+			if (c1.getInt(c1.getColumnIndex(QUIZATTEMPTS_C_PASSED)) != 0){
+				qs.setPassed(true);
+			}
 			c1.moveToNext();
 		}
 		c1.close();
 		qs.setAttempted(true);
 		
-		// find if passed
-		String s2 = QUIZATTEMPTS_C_USERID + "=? AND " + QUIZATTEMPTS_C_ACTIVITY_DIGEST +"=? AND "+ QUIZATTEMPTS_C_PASSED +"=1";
-		String[] args2 = new String[] { String.valueOf(userId), digest };
-		Cursor c2 = db.query(QUIZATTEMPTS_TABLE, null, s2, args2, null, null, null);
-		if (c2.getCount() > 0){
-			qs.setPassed(true);
-		}
-		c2.close();
-		
-		/*
-		String s3 = QUIZATTEMPTS_C_USERID + "=? AND " + QUIZATTEMPTS_C_ACTIVITY_DIGEST +"=?";
-		String[] args3 = new String[] { String.valueOf(userId), digest };
-		Cursor c3 = db.query(QUIZATTEMPTS_TABLE, new String [] {"MAX("+  QUIZATTEMPTS_C_SCORE +") as userscore"}, s3, args3, null, null, null);
-		c3.moveToFirst();
-		while (c3.isAfterLast() == false) {
-			
-			int userScore = c3.getInt(c3.getColumnIndex("userscore"));
-			if (userScore > qs.getUserScore()){
-				qs.setUserScore(userScore);
-			}
-			Log.d(TAG, "Score: " + c3.getInt(c3.getColumnIndex("userscore")));
-			Log.d(TAG, "passed: " + qs.isPassed());
-			c3.moveToNext();
-		}
-		c3.close();
-		*/
 		return qs;
 	}
+	
 	public void insertTracker(int courseId, String digest, String data, boolean completed){
 		//get current user id
 		long userId = this.getUserId(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));

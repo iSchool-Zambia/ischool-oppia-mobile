@@ -24,8 +24,9 @@ public class ISchool extends Application {
 	public static final String TAG = ISchool.class.getSimpleName();
 
 	public static String deviceId = "";
-	public static boolean ALLOW_CORE_LOGIN_SCREEN = false;
+	public static boolean ALLOW_CORE_LOGIN_SCREEN = true;
 	public static String USER_ID_FORMAT = "\\d{6}/\\d{2}/\\d{1}";
+	public static String SCORECARD_MAX_QUIZ_ATTEMPTS = "3"; // needs to be a string rather than int, as the limit clause for db.query uses a string
 	
 	/* Set of locations to look for the login file/data */
 	private static String[] userDataFileLocation = new String[] {
