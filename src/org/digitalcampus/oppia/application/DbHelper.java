@@ -34,6 +34,7 @@ import org.digitalcampus.oppia.model.TrackerLog;
 import org.digitalcampus.oppia.model.User;
 import org.digitalcampus.oppia.task.Payload;
 import org.digitalcampus.oppia.utils.xmlreaders.CourseXMLReader;
+import org.ischool.zambia.oppia.application.ISchool;
 import org.joda.time.DateTime;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -703,22 +704,27 @@ public class DbHelper extends SQLiteOpenHelper {
 		c.moveToFirst();
 		while (c.isAfterLast() == false) {
 			// get the first X attempts at this quiz
-			String sqlQuizAttempts = "";
-			boolean isCompleted = false;
+			String s1 = QUIZATTEMPTS_C_USERID + "=? AND " + QUIZATTEMPTS_C_ACTIVITY_DIGEST +"=?";
+			String[] args1 = new String[] { String.valueOf(userId), c.getString(c.getColumnIndex(ACTIVITY_C_ACTIVITYDIGEST)) };
 			
-			/*
-			Cursor q = db.rawQuery(sqlQuizAttempts,null);
+			
+			boolean isCompleted = false;
+		
+			Cursor q = db.query(QUIZATTEMPTS_TABLE, null, s1, args1, null, null, QUIZATTEMPTS_C_DATETIME + " ASC", ISchool.SCORECARD_MAX_QUIZ_ATTEMPTS);
 			q.moveToFirst();
 			while (q.isAfterLast() == false) {
-				 
+				 if (q.getInt(q.getColumnIndex(QUIZATTEMPTS_C_PASSED)) > 0 ) {
+					 isCompleted = true;
+				 }
+				q.moveToNext();
 			}
+			
 			if (isCompleted){
 				noCompleted ++;
 			} else if (q.getCount()>0){
 				noStarted++;
 			}
-			*/
-			
+			q.close();
 			
 			c.moveToNext();
 		}
@@ -778,7 +784,7 @@ public class DbHelper extends SQLiteOpenHelper {
 		String s1 = QUIZATTEMPTS_C_USERID + "=? AND " + QUIZATTEMPTS_C_ACTIVITY_DIGEST +"=?";
 		String[] args1 = new String[] { String.valueOf(userId), digest };
 
-		Cursor c1 = db.query(QUIZATTEMPTS_TABLE, null, s1, args1, null, null, QUIZATTEMPTS_C_DATETIME + " ASC", "3");
+		Cursor c1 = db.query(QUIZATTEMPTS_TABLE, null, s1, args1, null, null, QUIZATTEMPTS_C_DATETIME + " ASC", ISchool.SCORECARD_MAX_QUIZ_ATTEMPTS);
 		if (c1.getCount() == 0){
 			return qs;
 		}
