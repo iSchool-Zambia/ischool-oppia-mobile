@@ -33,6 +33,7 @@ import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
+import org.digitalcampus.oppia.application.SessionManager;
 import org.digitalcampus.oppia.exception.UserNotFoundException;
 import org.digitalcampus.oppia.listener.UpdateScheduleListener;
 import org.digitalcampus.oppia.model.ActivitySchedule;
@@ -81,7 +82,7 @@ public class ScheduleUpdateTask extends AsyncTask<Payload, DownloadProgress, Pay
 		try {
 			
 			DbHelper db = new DbHelper(ctx);
-        	User user = db.getUser(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
+        	User user = db.getUser(SessionManager.getUsername(ctx));
 			DatabaseManager.getInstance().closeDatabase();
 			
 			String responseStr = "";

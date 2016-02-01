@@ -29,7 +29,10 @@ import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
 import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
 import org.digitalcampus.oppia.adapter.ActivityPagerAdapter;
 import org.digitalcampus.oppia.adapter.SectionListAdapter;
+import org.digitalcampus.oppia.application.DatabaseManager;
+import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
+import org.digitalcampus.oppia.application.SessionManager;
 import org.digitalcampus.oppia.model.Activity;
 import org.digitalcampus.oppia.model.Course;
 import org.digitalcampus.oppia.model.Section;
@@ -48,30 +51,36 @@ import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-
-public class CourseActivity extends FragmentActivity implements ActionBar.TabListener, OnInitListener {
+public class CourseActivity extends AppActivity implements ActionBar.TabListener, OnInitListener {
 
 	public static final String TAG = CourseActivity.class.getSimpleName();
 	public static final String BASELINE_TAG = "BASELINE";
 	private Section section;
 	private Course course;
+
 	private int currentActivityNo = 0;
-	private SharedPreferences prefs;
+    private int previousActivityNo = 0;
+
+    private SharedPreferences prefs;
+    private DbHelper db;
 	private ArrayList<Activity> activities;
 	private boolean isBaseline = false;
 	private ActionBar actionBar;
+    private long userID;
 
 	private static int TTS_CHECK = 0;
 	private static TextToSpeech myTTS;
@@ -94,15 +103,14 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 			section = (Section) bundle.getSerializable(Section.TAG);
 			course = (Course) bundle.getSerializable(Course.TAG);
 			activities = section.getActivities();
-			currentActivityNo = (Integer) bundle.getSerializable(SectionListAdapter.TAG_PLACEHOLDER);
+			currentActivityNo = bundle.getInt(SectionListAdapter.TAG_PLACEHOLDER);
+            previousActivityNo = currentActivityNo;
 			if (bundle.getSerializable(CourseActivity.BASELINE_TAG) != null) {
-				this.isBaseline = (Boolean) bundle.getBoolean(CourseActivity.BASELINE_TAG);
+				this.isBaseline = bundle.getBoolean(CourseActivity.BASELINE_TAG);
 			}
 			// set image
-			BitmapDrawable bm = ImageUtils
-					.LoadBMPsdcard(course.getImageFileFromRoot(), this.getResources(), MobileLearning.APP_LOGO);
+			BitmapDrawable bm = ImageUtils.LoadBMPsdcard(course.getImageFileFromRoot(), this.getResources(), MobileLearning.APP_LOGO);
 			actionBar.setIcon(bm);
-
 			actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 			actionBar.setDisplayHomeAsUpEnabled(true);
 			actionBar.setHomeButtonEnabled(true);
@@ -117,19 +125,20 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 
 		viewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 
-			public void onPageScrollStateChanged(int arg0) {
-				// do nothing
-			}
+            public void onPageScrollStateChanged(int arg0) {
+                // do nothing
+            }
 
-			public void onPageScrolled(int arg0, float arg1, int arg2) {
-				// do nothing
-			}
+            public void onPageScrolled(int arg0, float arg1, int arg2) {
+                // do nothing
+            }
 
-			public void onPageSelected(int arg0) {
-				actionBar.setSelectedNavigationItem(arg0);
-			}
+            public void onPageSelected(int numPage) {
+                Log.d(TAG, "Page selected " + numPage  + " current act " + currentActivityNo);
+                actionBar.setSelectedNavigationItem(numPage);
+            }
 
-		});
+        });
 	}
 
 	@Override
@@ -142,6 +151,7 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
 		super.onRestoreInstanceState(savedInstanceState);
 		currentActivityNo = savedInstanceState.getInt("currentActivityNo");
+        previousActivityNo = currentActivityNo;
 	}
 	
 	@Override
@@ -154,6 +164,9 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
         WidgetFactory currentWidget = (WidgetFactory) apAdapter.getItem(currentActivityNo);
         currentWidget.pauseTimeTracking();
         currentWidget.saveTracker();
+
+        DatabaseManager.getInstance().closeDatabase();
+        db = null;
 	}
 
     public void onResume(){
@@ -169,6 +182,9 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 		/* ischool specific end */
         WidgetFactory currentWidget = (WidgetFactory) apAdapter.getItem(currentActivityNo);
         currentWidget.resumeTimeTracking();
+
+        db = new DbHelper(this);
+        userID = db.getUserId(SessionManager.getUsername(this));
     }
 	
 	@Override
@@ -188,7 +204,7 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		MenuItem item = (MenuItem) menu.findItem(R.id.menu_tts);
+		MenuItem item = menu.findItem(R.id.menu_tts);
 		if (ttsRunning) {
 			item.setTitle(R.string.menu_stop_read_aloud);
 		} else {
@@ -296,8 +312,7 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
     }
 
 	private void createLanguageDialog() {
-		UIUtils ui = new UIUtils();
-		ui.createLanguageDialog(this, course.getLangs(), prefs, new Callable<Boolean>() {
+        UIUtils.createLanguageDialog(this, course.getLangs(), prefs, new Callable<Boolean>() {
 			public Boolean call() throws Exception {
 				CourseActivity.this.loadActivities();
 				return true;
@@ -305,22 +320,46 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 		});
 	}
 
-	public void onTabReselected(Tab tab, FragmentTransaction ft) {
-	}
+	public void onTabReselected(Tab tab, FragmentTransaction ft) {}
 
 	public void onTabSelected(Tab tab, FragmentTransaction ft) {
         int tabSelected = tab.getPosition();
-		viewPager.setCurrentItem(tabSelected);
-		this.currentActivityNo = tabSelected;
-		this.stopReading();
-        //apAdapter.getItem(tabSelected).onResume();
-        WidgetFactory currentWidget = (WidgetFactory) apAdapter.getItem(currentActivityNo);
-        currentWidget.resetTimeTracking();
+        Log.d(TAG, "Tab selected " + tabSelected + " current act " + currentActivityNo);
+
+        if (canNavigateTo(tabSelected)){
+            viewPager.setCurrentItem(tabSelected);
+            currentActivityNo = tabSelected;
+            this.stopReading();
+            WidgetFactory currentWidget = (WidgetFactory) apAdapter.getItem(currentActivityNo);
+            currentWidget.resetTimeTracking();
+        }
+        else{
+            Runnable setPreviousTab = new Runnable(){
+                @Override
+                public void run() {
+                    UIUtils.showAlert(CourseActivity.this, R.string.sequencing_dialog_title, R.string.sequencing_section_message);
+                    actionBar.setSelectedNavigationItem(currentActivityNo);
+                    viewPager.setCurrentItem(currentActivityNo);
+                }
+            };
+            Handler handler=new Handler();
+            handler.post(setPreviousTab);
+        }
+    }
+
+    public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+        ((WidgetFactory) apAdapter.getItem(currentActivityNo)).saveTracker();
 	}
 
-	public void onTabUnselected(Tab tab, FragmentTransaction ft) {
-		((WidgetFactory) apAdapter.getItem(currentActivityNo)).saveTracker();
-	}
+    private boolean canNavigateTo(int newTab){
+        //If the course does not have a sequencing mode, we can navigate freely
+        if (course.getSequencingMode().equals(Course.SEQUENCING_MODE_NONE)) return true;
+        // if it is a previous activity (or the first), no need for further checks
+        if ((newTab == 0) || (newTab <= currentActivityNo)) return true;
+        Activity previousActivity = activities.get(newTab - 1);
+        //the user can navigate to the activity if its directly preceding one is completed
+        return db.activityCompleted(course.getCourseId(), previousActivity.getDigest(), userID);
+    }
 
 	public void onInit(int status) {
 		// check for successful instantiation
@@ -331,23 +370,18 @@ public class CourseActivity extends FragmentActivity implements ActionBar.TabLis
 			HashMap<String,String> params = new HashMap<String,String>();
 			params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID,TAG);
 			myTTS.speak(((WidgetFactory) apAdapter.getItem(currentActivityNo)).getContentToRead(), TextToSpeech.QUEUE_FLUSH, params);
-			myTTS.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-				
-                @Override
-                public void onDone(String utteranceId){
-            		CourseActivity.this.ttsRunning = false;
-            		myTTS = null;
-                }
-
-                @Override
-                public void onError(String utteranceId){
-                }
-
-                @Override
-                public void onStart(String utteranceId){
-                }
-            	});
-		} else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                myTTS.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                    @Override
+                    public void onDone(String utteranceId){
+                        CourseActivity.this.ttsRunning = false;
+                        myTTS = null;
+                    }
+                    @Override public void onError(String utteranceId){ }
+                    @Override public void onStart(String utteranceId){ }
+                });
+            }
+        } else {
 			// TTS not installed so show message
 			Toast.makeText(this, this.getString(R.string.error_tts_start), Toast.LENGTH_LONG).show();
 		}

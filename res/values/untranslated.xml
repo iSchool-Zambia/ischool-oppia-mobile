@@ -4,5 +4,4 @@
     <string name="prefServerDefault">http://ischool.oppia-mobile.org/</string>
     <string name="prefServerTimeoutConnectionDefault">60000</string>
     <string name="prefServerTimeoutResponseDefault">60000</string>
-    
 </resources>

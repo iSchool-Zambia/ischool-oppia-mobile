@@ -31,6 +31,7 @@ import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
+import org.digitalcampus.oppia.application.SessionManager;
 import org.digitalcampus.oppia.exception.UserNotFoundException;
 import org.digitalcampus.oppia.listener.APIRequestListener;
 import org.digitalcampus.oppia.model.User;
@@ -62,7 +63,7 @@ public class APIRequestTask extends AsyncTask<Payload, Object, Payload>{
 		try {
 			
 			DbHelper db = new DbHelper(ctx);
-        	User u = db.getUser(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
+        	User u = db.getUser(SessionManager.getUsername(ctx));
 			DatabaseManager.getInstance().closeDatabase();
 			
 			HTTPConnectionUtils client = new HTTPConnectionUtils(ctx);
