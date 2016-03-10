@@ -24,13 +24,14 @@ import java.util.concurrent.Callable;
 import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.activity.ScorecardActivity;
-import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
+import org.digitalcampus.oppia.application.SessionManager;
 import org.digitalcampus.oppia.exception.UserNotFoundException;
 import org.digitalcampus.oppia.model.Course;
 import org.digitalcampus.oppia.model.Lang;
 import org.digitalcampus.oppia.model.User;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -56,18 +57,17 @@ public class UIUtils {
      */
 	public static void showUserData(Menu menu, final Context ctx, final Course courseInContext) {
 		MenuItem pointsItem = menu.findItem(R.id.points);
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+      	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 		
-		DbHelper db = new DbHelper(ctx);
+		DbHelper db = DbHelper.getInstance(ctx);
 		User u;
 		try {
-			u = db.getUser(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
+			u = db.getUser(SessionManager.getUsername(ctx));
 			Log.d(TAG,"username: " + u.getUsername());
 			Log.d(TAG,"points: " + u.getPoints());
 		} catch (UserNotFoundException e) {
 			return;
 		}
-		DatabaseManager.getInstance().closeDatabase();
 		
 		if(pointsItem == null){
 			return;
@@ -186,12 +186,12 @@ public class UIUtils {
 	 * @param funct
 	 * @return
 	 */
-	public static AlertDialog showAlert(Context ctx, int title, int msg, Callable<Boolean> funct) {
-		return UIUtils.showAlert(ctx, ctx.getString(title), ctx.getString(msg), funct);
+	public static void showAlert(Context ctx, int title, int msg, Callable<Boolean> funct) {
+        UIUtils.showAlert(ctx, ctx.getString(title), ctx.getString(msg), funct);
 	}
 
-	public static AlertDialog showAlert(Context ctx, int title, int msg, int btnText, Callable<Boolean> funct) {
-		return UIUtils.showAlert(ctx, ctx.getString(title), ctx.getString(msg),ctx.getString(btnText), funct);
+	public static void showAlert(Context ctx, int title, int msg, int btnText, Callable<Boolean> funct) {
+		UIUtils.showAlert(ctx, ctx.getString(title), ctx.getString(msg),ctx.getString(btnText), funct);
 	}
 	/**
 	 * @param ctx
@@ -200,12 +200,12 @@ public class UIUtils {
 	 * @param funct
 	 * @return
 	 */
-	public static AlertDialog showAlert(Context ctx, int R, CharSequence msg, Callable<Boolean> funct) {
-		return UIUtils.showAlert(ctx, ctx.getString(R), msg, funct);
+	public static void showAlert(Context ctx, int R, CharSequence msg, Callable<Boolean> funct) {
+		UIUtils.showAlert(ctx, ctx.getString(R), msg, funct);
 	}
 
-	public static AlertDialog showAlert(Context ctx, String title, CharSequence msg, final Callable<Boolean> funct) {
-		return UIUtils.showAlert(ctx, title, msg, ctx.getString(R.string.close),funct);
+	public static void showAlert(Context ctx, String title, CharSequence msg, final Callable<Boolean> funct) {
+		UIUtils.showAlert(ctx, title, msg, ctx.getString(R.string.close),funct);
 	}
 	/**
 	 * @param ctx
@@ -214,8 +214,13 @@ public class UIUtils {
 	 * @param funct
 	 * @return
 	 */
-	public static AlertDialog showAlert(Context ctx, String title, CharSequence msg, String btnText, final Callable<Boolean> funct) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+	public static void showAlert(Context ctx, String title, CharSequence msg, String btnText, final Callable<Boolean> funct) {
+        if ( ctx instanceof Activity) {
+            Activity activity = (Activity) ctx;
+            if ( activity.isFinishing() ) { return; }
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
 		builder.setTitle(title);
 		builder.setMessage(msg);
 		builder.setCancelable(true);
@@ -236,7 +241,6 @@ public class UIUtils {
 		});
 		AlertDialog alert = builder.create();
         alert.show();
-		return alert;
 	}
 	
 	

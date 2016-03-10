@@ -25,7 +25,6 @@ import java.util.concurrent.Callable;
 import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.adapter.CourseIntallViewAdapter;
 import org.digitalcampus.oppia.adapter.DownloadCourseListAdapter;
-import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
 import org.digitalcampus.oppia.listener.APIRequestListener;
@@ -88,7 +87,7 @@ public class DownloadActivity extends AppActivity implements APIRequestListener,
         	this.showUpdatesOnly = true;
         }
 
-        courses = new ArrayList<CourseIntallViewAdapter>();
+        courses = new ArrayList<>();
         dla = new DownloadCourseListAdapter(this, courses);
         dla.setOnClickListener(new CourseListListener());
         ListView listView = (ListView) findViewById(R.id.tag_list);
@@ -140,7 +139,7 @@ public class DownloadActivity extends AppActivity implements APIRequestListener,
 	    try {
 			this.json = new JSONObject(savedInstanceState.getString("json"));
             ArrayList<CourseIntallViewAdapter> savedCourses = (ArrayList<CourseIntallViewAdapter>) savedInstanceState.getSerializable("courses");
-            this.courses.addAll(savedCourses);
+            if (savedCourses!=null) this.courses.addAll(savedCourses);
 		} catch (Exception e) {
             // error in the json so just get the list again
         }
@@ -183,7 +182,7 @@ public class DownloadActivity extends AppActivity implements APIRequestListener,
 				JSONObject json_obj = (JSONObject) json.getJSONArray(MobileLearning.SERVER_COURSES_NAME).get(i);
                 CourseIntallViewAdapter course = new CourseIntallViewAdapter(prefs.getString(PrefsActivity.PREF_STORAGE_LOCATION, ""));
 				
-				ArrayList<Lang> titles = new ArrayList<Lang>();
+				ArrayList<Lang> titles = new ArrayList<>();
 				JSONObject jsonTitles = json_obj.getJSONObject("title");
 				Iterator<?> keys = jsonTitles.keys();
 		        while( keys.hasNext() ){
@@ -193,7 +192,7 @@ public class DownloadActivity extends AppActivity implements APIRequestListener,
 		        }
                 course.setTitles(titles);
 		        
-		        ArrayList<Lang> descriptions = new ArrayList<Lang>();
+		        ArrayList<Lang> descriptions = new ArrayList<>();
 		        if (json_obj.has("description") && !json_obj.isNull("description")){
 		        	try {
 						JSONObject jsonDescriptions = json_obj.getJSONObject("description");
@@ -219,7 +218,7 @@ public class DownloadActivity extends AppActivity implements APIRequestListener,
 		        }catch (JSONException je){
                     course.setDraft(false);
 		        }
-		        DbHelper db = new DbHelper(this);
+		        DbHelper db = DbHelper.getInstance(this);
                 course.setInstalled(db.isInstalled(course.getShortname()));
                 course.setToUpdate(db.toUpdate(course.getShortname(), course.getVersionId()));
 				if (json_obj.has("schedule_uri")){
@@ -227,7 +226,7 @@ public class DownloadActivity extends AppActivity implements APIRequestListener,
                     course.setScheduleURI(json_obj.getString("schedule_uri"));
                     course.setToUpdateSchedule(db.toUpdateSchedule(course.getShortname(), course.getScheduleVersionID()));
 				}
-				DatabaseManager.getInstance().closeDatabase();
+
                 if (downloadingCourses!=null && downloadingCourses.contains(course.getDownloadUrl())){
                     course.setDownloading(true);
                 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 import org.digitalcampus.oppia.activity.PrefsActivity;
-import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.model.User;
 import org.digitalcampus.oppia.utils.storage.FileUtils;
@@ -75,7 +74,7 @@ public class ISchool extends Application {
 		}
 		
 		// find if user already already registered/logged in on the device
-		DbHelper db = new DbHelper(ctx);
+		DbHelper db = DbHelper.getInstance(ctx);
 		long userId = db.isUser(u.getUsername());
 		if (userId == -1) {
 			// generate password
@@ -83,7 +82,7 @@ public class ISchool extends Application {
 			u.setPassword(guid.toString());
 			db.addUser(u);
 		}
-		DatabaseManager.getInstance().closeDatabase();
+
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 		
 		// now log user into app

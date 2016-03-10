@@ -19,6 +19,7 @@ package org.digitalcampus.oppia.application;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.exception.InvalidXMLException;
@@ -48,6 +49,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
+import android.util.Pair;
 
 import com.splunk.mint.Mint;
 
@@ -55,9 +57,10 @@ public class DbHelper extends SQLiteOpenHelper {
 
 	static final String TAG = DbHelper.class.getSimpleName();
 	static final String DB_NAME = "mobilelearning.db";
-	static final int DB_VERSION = 22;
+	static final int DB_VERSION = 24;
 
-	private static SQLiteDatabase db;
+    private static DbHelper instance;
+	private SQLiteDatabase db;
 	private SharedPreferences prefs;
 	
 	private static final String COURSE_TABLE = "Module";
@@ -71,11 +74,11 @@ public class DbHelper extends SQLiteOpenHelper {
 	private static final String COURSE_C_IMAGE = "imagelink";
 	private static final String COURSE_C_LANGS = "langs";
 	private static final String COURSE_C_ORDER_PRIORITY = "orderpriority";
+    private static final String COURSE_C_SEQUENCING = "sequencing";
 	
 	private static final String ACTIVITY_TABLE = "Activity";
 	private static final String ACTIVITY_C_ID = BaseColumns._ID;
-	private static final String ACTIVITY_C_COURSEID = "modid"; // reference to
-															// COURSE_C_ID
+	private static final String ACTIVITY_C_COURSEID = "modid"; // reference to COURSE_C_ID
 	private static final String ACTIVITY_C_SECTIONID = "sectionid";
 	private static final String ACTIVITY_C_ACTID = "activityid";
 	private static final String ACTIVITY_C_ACTTYPE = "activitytype";
@@ -106,8 +109,7 @@ public class DbHelper extends SQLiteOpenHelper {
 	private static final String QUIZATTEMPTS_C_MAXSCORE = "maxscore";
 	private static final String QUIZATTEMPTS_C_PASSED = "passed";
 	private static final String QUIZATTEMPTS_C_ACTIVITY_DIGEST = "actdigest";
-	
-	
+
 	private static final String SEARCH_TABLE = "search";
 	private static final String SEARCH_C_TEXT = "fulltext";
 	private static final String SEARCH_C_COURSETITLE = "coursetitle";
@@ -126,8 +128,36 @@ public class DbHelper extends SQLiteOpenHelper {
 	private static final String USER_C_POINTS = "points";
 	private static final String USER_C_BADGES = "badges";
 
-	private static final String USER_PROPS_TABLE = "userprops";
-	
+	private static final String USER_PREFS_TABLE = "userprefs";
+    private static final String USER_PREFS_C_USERNAME = "username";
+    private static final String USER_PREFS_C_PREFKEY = "preference";
+    private static final String USER_PREFS_C_PREFVALUE = "value";
+
+	// Constructor
+	private DbHelper(Context ctx) { //
+		super(ctx, DB_NAME, null, DB_VERSION);
+		prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        db = this.getWritableDatabase();
+	}
+
+    public static synchronized DbHelper getInstance(Context ctx){
+        if (instance == null){
+            instance = new DbHelper(ctx.getApplicationContext());
+        }
+        return instance;
+    }
+
+	@Override
+	public void onCreate(SQLiteDatabase db) {
+		createCourseTable(db);
+		createActivityTable(db);
+		createLogTable(db);
+		createQuizAttemptsTable(db);
+		createSearchTable(db);
+		createUserTable(db);
+        createUserPrefsTable(db);
+	}
+
     public void beginTransaction(){
         db.beginTransaction();
     }
@@ -138,24 +168,6 @@ public class DbHelper extends SQLiteOpenHelper {
         db.endTransaction();
     }
 
-	// Constructor
-	public DbHelper(Context ctx) { //
-		super(ctx, DB_NAME, null, DB_VERSION);
-		prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-		DatabaseManager.initializeInstance(this);
-		db = DatabaseManager.getInstance().openDatabase();
-	}
-
-	@Override
-	public void onCreate(SQLiteDatabase db) {
-		createCourseTable(db);
-		createActivityTable(db);
-		createLogTable(db);
-		createQuizAttemptsTable(db);
-		createSearchTable(db);
-		createUserTable(db);
-	}
-
 	public void createCourseTable(SQLiteDatabase db){
 		String m_sql = "create table " + COURSE_TABLE + " (" + COURSE_C_ID + " integer primary key autoincrement, "
 				+ COURSE_C_VERSIONID + " int, " + COURSE_C_TITLE + " text, " + COURSE_C_LOCATION + " text, "
@@ -163,7 +175,8 @@ public class DbHelper extends SQLiteOpenHelper {
 				+ COURSE_C_IMAGE + " text,"
 				+ COURSE_C_DESC + " text,"
 				+ COURSE_C_ORDER_PRIORITY + " integer default 0, " 
-				+ COURSE_C_LANGS + " text)";
+				+ COURSE_C_LANGS + " text, "
+                + COURSE_C_SEQUENCING + " text default '" + Course.SEQUENCING_MODE_NONE + "' )";
 		db.execSQL(m_sql);
 	}
 	
@@ -236,6 +249,16 @@ public class DbHelper extends SQLiteOpenHelper {
             ");";
 		db.execSQL(sql);
 	}
+
+    public void createUserPrefsTable(SQLiteDatabase db){
+        String m_sql = "create table " + USER_PREFS_TABLE + " ("
+                + USER_PREFS_C_USERNAME + " text not null, "
+                + USER_PREFS_C_PREFKEY + " text not null, "
+                + USER_PREFS_C_PREFVALUE + " text, "
+                + "primary key (" + USER_PREFS_C_USERNAME + ", " + USER_PREFS_C_PREFKEY + ") "
+                +  ")";
+        db.execSQL(m_sql);
+    }
 	
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
@@ -375,6 +398,18 @@ public class DbHelper extends SQLiteOpenHelper {
 			String sql2 = "ALTER TABLE " + USER_TABLE + " ADD COLUMN " + USER_C_BADGES + " integer default 0;";
 			db.execSQL(sql2);
 		}
+
+        if(oldVersion <= 22 && newVersion >= 23){
+            // add user preferences table
+            db.execSQL("drop table if exists " + USER_PREFS_TABLE);
+            createUserPrefsTable(db);
+        }
+
+        if(oldVersion <= 23 && newVersion >= 24){
+            // add field "sequencingMode" to Course table
+            String sql1 = "ALTER TABLE " + COURSE_TABLE + " ADD COLUMN " + COURSE_C_SEQUENCING + " text default '"+Course.SEQUENCING_MODE_NONE+"';";
+            db.execSQL(sql1);
+        }
 	}
 
 	public void updateV43(long userId){
@@ -403,6 +438,7 @@ public class DbHelper extends SQLiteOpenHelper {
 		values.put(COURSE_C_IMAGE, course.getImageFile());
 		values.put(COURSE_C_DESC, course.getDescriptionJSONString());
 		values.put(COURSE_C_ORDER_PRIORITY, course.getPriority());
+        values.put(COURSE_C_SEQUENCING, course.getSequencingMode());
 		
 		if (!this.isInstalled(course.getShortname())) {
 			Log.v(TAG, "Record added");
@@ -565,7 +601,7 @@ public class DbHelper extends SQLiteOpenHelper {
 	public void resetSchedule(int courseId){
 		ContentValues values = new ContentValues();
 		values.put(ACTIVITY_C_STARTDATE,"");
-		values.put(ACTIVITY_C_ENDDATE,"");
+		values.put(ACTIVITY_C_ENDDATE, "");
 		db.update(ACTIVITY_TABLE, values, ACTIVITY_C_COURSEID + "=" + courseId, null);
 	}
 	
@@ -583,6 +619,7 @@ public class DbHelper extends SQLiteOpenHelper {
 			course.setLangsFromJSONString(c.getString(c.getColumnIndex(COURSE_C_LANGS)));
 			course.setShortname(c.getString(c.getColumnIndex(COURSE_C_SHORTNAME)));
 			course.setPriority(c.getInt(c.getColumnIndex(COURSE_C_ORDER_PRIORITY)));
+            course.setSequencingMode(c.getString(c.getColumnIndex(COURSE_C_SEQUENCING)));
 			courses.add(course);
 			c.moveToNext();
 		}
@@ -628,7 +665,8 @@ public class DbHelper extends SQLiteOpenHelper {
 			course.setShortname(c.getString(c.getColumnIndex(COURSE_C_SHORTNAME)));
 			course.setPriority(c.getInt(c.getColumnIndex(COURSE_C_ORDER_PRIORITY)));
 			course.setDescriptionsFromJSONString(c.getString(c.getColumnIndex(COURSE_C_DESC)));
-			course = this.courseSetProgress(course, userId);
+            course.setSequencingMode(c.getString(c.getColumnIndex(COURSE_C_SEQUENCING)));
+            course = this.courseSetProgress(course, userId);
 			courses.add(course);
 			c.moveToNext();
 		}
@@ -645,13 +683,14 @@ public class DbHelper extends SQLiteOpenHelper {
 		while (c.isAfterLast() == false) {
 			course = new Course(prefs.getString(PrefsActivity.PREF_STORAGE_LOCATION, ""));
 			course.setCourseId(c.getInt(c.getColumnIndex(COURSE_C_ID)));
-			course.setVersionId(c.getDouble(c.getColumnIndex(COURSE_C_VERSIONID)));
-			course.setTitlesFromJSONString(c.getString(c.getColumnIndex(COURSE_C_TITLE)));
+            course.setVersionId(c.getDouble(c.getColumnIndex(COURSE_C_VERSIONID)));
+            course.setTitlesFromJSONString(c.getString(c.getColumnIndex(COURSE_C_TITLE)));
 			course.setImageFile(c.getString(c.getColumnIndex(COURSE_C_IMAGE)));
-			course.setLangsFromJSONString(c.getString(c.getColumnIndex(COURSE_C_LANGS)));
-			course.setShortname(c.getString(c.getColumnIndex(COURSE_C_SHORTNAME)));
-			course.setPriority(c.getInt(c.getColumnIndex(COURSE_C_ORDER_PRIORITY)));
-			course.setDescriptionsFromJSONString(c.getString(c.getColumnIndex(COURSE_C_DESC)));
+            course.setLangsFromJSONString(c.getString(c.getColumnIndex(COURSE_C_LANGS)));
+            course.setShortname(c.getString(c.getColumnIndex(COURSE_C_SHORTNAME)));
+            course.setPriority(c.getInt(c.getColumnIndex(COURSE_C_ORDER_PRIORITY)));
+            course.setDescriptionsFromJSONString(c.getString(c.getColumnIndex(COURSE_C_DESC)));
+            course.setSequencingMode(c.getString(c.getColumnIndex(COURSE_C_SEQUENCING)));
 			course = this.courseSetProgress(course, userId);
 			c.moveToNext();
 		}
@@ -794,6 +833,9 @@ public class DbHelper extends SQLiteOpenHelper {
 			float userScore = c1.getFloat(c1.getColumnIndex(QUIZATTEMPTS_C_SCORE));
 			if (userScore > qs.getUserScore()){
 				qs.setUserScore(userScore);
+			}
+			if (c1.getInt(c1.getColumnIndex(QUIZATTEMPTS_C_PASSED)) != 0){
+				qs.setPassed(true);
 			}
 			qs.setMaxScore(c1.getFloat(c1.getColumnIndex(QUIZATTEMPTS_C_MAXSCORE)));
 			if (c1.getInt(c1.getColumnIndex(QUIZATTEMPTS_C_PASSED)) != 0){
@@ -1088,21 +1130,21 @@ public class DbHelper extends SQLiteOpenHelper {
 	}
 	
 	public void insertQuizAttempts(ArrayList<QuizAttempt> quizAttempts){
-		 beginTransaction();
-			for (QuizAttempt qa : quizAttempts) {
-				ContentValues values = new ContentValues();
-				values.put(QUIZATTEMPTS_C_DATA, qa.getData());
-				values.put(QUIZATTEMPTS_C_COURSEID, qa.getCourseId());
-				values.put(QUIZATTEMPTS_C_USERID, qa.getUserId());
-				values.put(QUIZATTEMPTS_C_MAXSCORE, qa.getMaxscore());
-				values.put(QUIZATTEMPTS_C_SCORE, qa.getScore());
-				values.put(QUIZATTEMPTS_C_PASSED, qa.isPassed());
-				values.put(QUIZATTEMPTS_C_ACTIVITY_DIGEST, qa.getActivityDigest());
-				values.put(QUIZATTEMPTS_C_SENT, qa.isSent());
-	    		values.put(QUIZATTEMPTS_C_DATETIME, qa.getDateTimeString());
-				db.insertOrThrow(QUIZATTEMPTS_TABLE, null, values);
-			}
-	        endTransaction(true);
+        beginTransaction();
+        for (QuizAttempt qa : quizAttempts) {
+            ContentValues values = new ContentValues();
+            values.put(QUIZATTEMPTS_C_DATA, qa.getData());
+            values.put(QUIZATTEMPTS_C_COURSEID, qa.getCourseId());
+            values.put(QUIZATTEMPTS_C_USERID, qa.getUserId());
+            values.put(QUIZATTEMPTS_C_MAXSCORE, qa.getMaxscore());
+            values.put(QUIZATTEMPTS_C_SCORE, qa.getScore());
+            values.put(QUIZATTEMPTS_C_PASSED, qa.isPassed());
+            values.put(QUIZATTEMPTS_C_ACTIVITY_DIGEST, qa.getActivityDigest());
+            values.put(QUIZATTEMPTS_C_SENT, qa.isSent());
+            values.put(QUIZATTEMPTS_C_DATETIME, qa.getDateTimeString());
+            db.insertOrThrow(QUIZATTEMPTS_TABLE, null, values);
+        }
+        endTransaction(true);
 	}
 	
 	public ArrayList<QuizAttempt>  getUnsentQuizAttempts(){
@@ -1335,7 +1377,7 @@ public class DbHelper extends SQLiteOpenHelper {
 	
 	public void searchIndexRemoveCourse(long courseId){
 		ArrayList<Activity> activities = this.getCourseActivities(courseId);
-		Log.d(TAG,"deleting course from index: "+ courseId);
+		Log.d(TAG, "deleting course from index: " + courseId);
 		for(Activity a: activities){
 			this.deleteSearchRow(a.getDbId());
 		}
@@ -1377,13 +1419,13 @@ public class DbHelper extends SQLiteOpenHelper {
 					SEARCH_C_ACTIVITYTITLE, searchText);
 		
 		String sqlSectionTitle = String.format("SELECT c.%s AS courseid, a.%s as activitydigest, a.%s as sectionid, 10 AS ranking FROM %s ft " +
-				" INNER JOIN %s a ON a.%s = ft.docid" +
-				" INNER JOIN %s c ON a.%s = c.%s " +
-				" WHERE %s MATCH '%s' ",
-					COURSE_C_ID, ACTIVITY_C_ACTIVITYDIGEST, ACTIVITY_C_SECTIONID, SEARCH_TABLE, 
-					ACTIVITY_TABLE, ACTIVITY_C_ID, 
-					COURSE_TABLE, ACTIVITY_C_COURSEID, COURSE_C_ID,
-					SEARCH_C_SECTIONTITLE, searchText);
+                        " INNER JOIN %s a ON a.%s = ft.docid" +
+                        " INNER JOIN %s c ON a.%s = c.%s " +
+                        " WHERE %s MATCH '%s' ",
+                COURSE_C_ID, ACTIVITY_C_ACTIVITYDIGEST, ACTIVITY_C_SECTIONID, SEARCH_TABLE,
+                ACTIVITY_TABLE, ACTIVITY_C_ID,
+                COURSE_TABLE, ACTIVITY_C_COURSEID, COURSE_C_ID,
+                SEARCH_C_SECTIONTITLE, searchText);
 		String sqlCourseTitle = String.format("SELECT c.%s AS courseid, a.%s as activitydigest, a.%s as sectionid, 15 AS ranking FROM %s ft " +
 				" INNER JOIN %s a ON a.%s = ft.docid" +
 				" INNER JOIN %s c ON a.%s = c.%s " +
@@ -1450,8 +1492,8 @@ public class DbHelper extends SQLiteOpenHelper {
 	 * Delete the entire search index
 	 */
 	public void deleteSearchIndex(){
-		db.execSQL("DELETE FROM "+ SEARCH_TABLE);
-		Log.d(TAG,"Deleted search index...");
+		db.execSQL("DELETE FROM " + SEARCH_TABLE);
+		Log.d(TAG, "Deleted search index...");
 	}
 	
 	/*
@@ -1479,7 +1521,7 @@ public class DbHelper extends SQLiteOpenHelper {
 						" AND " + ACTIVITY_C_COURSEID + " = %d " +
 						" AND " + ACTIVITY_C_SECTIONID + " = %d", activity.getActId(), activity.getCourseId(), activity.getSectionId());
 		
-		Log.d(TAG,"sql: " + sql);
+		Log.d(TAG, "sql: " + sql);
 		Cursor c = db.rawQuery(sql,null);
 	    if(c !=null && c.getCount()>0){
 	    	c.moveToFirst();
@@ -1549,4 +1591,37 @@ public class DbHelper extends SQLiteOpenHelper {
 	    	return true;
 	    }
 	}
+
+    public void insertUserPreferences(String username, List<Pair<String, String>> preferences){
+        beginTransaction();
+        for (Pair<String, String> prefence : preferences) {
+            ContentValues values = new ContentValues();
+            values.put(USER_PREFS_C_USERNAME, username);
+            values.put(USER_PREFS_C_PREFKEY, prefence.first);
+            values.put(USER_PREFS_C_PREFVALUE, prefence.second);
+            db.insertWithOnConflict(USER_PREFS_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        }
+        endTransaction(true);
+    }
+
+    public List<Pair<String, String>> getUserPreferences(String username){
+        ArrayList<Pair<String, String>> prefs = new ArrayList<>();
+        String whereClause = USER_PREFS_C_USERNAME + "=? ";
+        String[] args = new String[] { username };
+
+        Cursor c = db.query(USER_PREFS_TABLE, null, whereClause, args, null, null, null);
+        c.moveToFirst();
+        while (!c.isAfterLast()) {
+
+            String prefKey = c.getString(c.getColumnIndex(USER_PREFS_C_PREFKEY));
+            String prefValue = c.getString(c.getColumnIndex(USER_PREFS_C_PREFVALUE));
+            Pair<String, String> pref = new Pair<>(prefKey, prefValue);
+            prefs.add(pref);
+
+            c.moveToNext();
+        }
+        c.close();
+
+        return prefs;
+    }
 }

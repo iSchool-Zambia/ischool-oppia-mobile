@@ -28,19 +28,19 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.http.client.ClientProtocolException;
-import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.digitalcampus.oppia.listener.DownloadMediaListener;
 import org.digitalcampus.oppia.model.DownloadProgress;
 import org.digitalcampus.oppia.model.Media;
-import org.digitalcampus.oppia.utils.storage.FileUtils;
-
-import com.splunk.mint.Mint;
+import org.digitalcampus.oppia.utils.storage.Storage;
+import org.ischool.zambia.oppia.R;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+
+import com.splunk.mint.Mint;
 
 public class DownloadMediaTask extends AsyncTask<Payload, DownloadProgress, Payload>{
 
@@ -59,7 +59,7 @@ public class DownloadMediaTask extends AsyncTask<Payload, DownloadProgress, Payl
 		Payload payload = params[0];
 		for (Object o: payload.getData()){
 			Media m = (Media) o;
-			File file = new File(FileUtils.getMediaPath(ctx),m.getFilename());
+			File file = new File(Storage.getMediaPath(ctx),m.getFilename());
 			try { 
 				
 				URL u = new URL(m.getDownloadUrl());
@@ -73,7 +73,7 @@ public class DownloadMediaTask extends AsyncTask<Payload, DownloadProgress, Payl
 								ctx.getString(R.string.prefServerTimeoutResponse))));
                 
                 long fileLength = c.getContentLength();
-                long availableStorage = FileUtils.getAvailableStorageSize(ctx);
+                long availableStorage = Storage.getAvailableStorageSize(ctx);
 
                 if (fileLength >= availableStorage){
                     payload.setResult(false);

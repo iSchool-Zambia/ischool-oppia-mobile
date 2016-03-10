@@ -20,7 +20,6 @@ package org.digitalcampus.oppia.activity;
 import java.util.ArrayList;
 import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.adapter.SearchResultsListAdapter;
-import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.listener.DBListener;
 import org.digitalcampus.oppia.model.Course;
@@ -60,14 +59,13 @@ public class SearchActivity extends AppActivity {
 
 	private String currentSearch;
     private SearchResultsListAdapter srla;
-    protected ArrayList<SearchResult> results = new ArrayList<SearchResult>();
+    protected ArrayList<SearchResult> results = new ArrayList<>();
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_search);
-		getActionBar().setDisplayHomeAsUpEnabled(true);
-        getActionBar().setHomeButtonEnabled(true);
+
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         srla = new SearchResultsListAdapter(this, results);
@@ -91,9 +89,8 @@ public class SearchActivity extends AppActivity {
 	@Override
 	public void onStart(){
 		super.onStart();
-		DbHelper db = new DbHelper(this);
+		DbHelper db = DbHelper.getInstance(this);
 		userId = db.getUserId(prefs.getString("preUsername", ""));
-		DatabaseManager.getInstance().closeDatabase();
 		
 		searchText = (EditText) findViewById(R.id.search_string);
         searchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -165,7 +162,7 @@ public class SearchActivity extends AppActivity {
 
             searchButton.setEnabled(false);
             loadingSpinner.setVisibility(View.VISIBLE);
-            summary.setText(getString(R.string.search_searching));
+            summary.setText(getString(R.string.search_message_searching));
             summary.setVisibility(View.VISIBLE);
             SimpleAnimator.fadeFromTop(resultsList, SimpleAnimator.FADE_OUT);
             SimpleAnimator.fadeFromTop(summary, SimpleAnimator.FADE_IN);
@@ -179,9 +176,8 @@ public class SearchActivity extends AppActivity {
         @Override
         protected ArrayList<SearchResult> doInBackground(String... urls) {
             Log.d(TAG, "Starting search...");
-            DbHelper db = new DbHelper(SearchActivity.this);
+            DbHelper db = DbHelper.getInstance(SearchActivity.this);
             ArrayList<SearchResult> searchResults = db.search(currentSearch, 100, userId, SearchActivity.this, this);
-            DatabaseManager.getInstance().closeDatabase();
 
             return searchResults;
         }
@@ -198,12 +194,12 @@ public class SearchActivity extends AppActivity {
 
             summary.setText(results.size() > 0 ?
                     getString(R.string.search_result_summary, results.size(), currentSearch) :
-                    getString(R.string.search_no_results, currentSearch));
+                    getString(R.string.search_message_no_results, currentSearch));
         }
 
         @Override
         public void onProgressUpdate(Object... values){
-            summary.setText("Fetching results...");
+            summary.setText(getString(R.string.search_message_fetching));
         }
 
         //@Override

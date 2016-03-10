@@ -19,12 +19,8 @@ package org.digitalcampus.oppia.service;
 
 import java.util.ArrayList;
 
-import org.ischool.zambia.oppia.R;
-import org.ischool.zambia.oppia.listeners.RegisterISchoolUserListener;
-import org.ischool.zambia.oppia.tasks.RegisterISchoolUsersTask;
 import org.digitalcampus.oppia.activity.DownloadActivity;
 import org.digitalcampus.oppia.activity.PrefsActivity;
-import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
 import org.digitalcampus.oppia.listener.APIRequestListener;
@@ -34,10 +30,12 @@ import org.digitalcampus.oppia.task.Payload;
 import org.digitalcampus.oppia.task.SubmitQuizAttemptsTask;
 import org.digitalcampus.oppia.task.SubmitTrackerMultipleTask;
 import org.digitalcampus.oppia.utils.ui.OppiaNotificationBuilder;
+import org.ischool.zambia.oppia.R;
+import org.ischool.zambia.oppia.listeners.RegisterISchoolUserListener;
+import org.ischool.zambia.oppia.tasks.RegisterISchoolUsersTask;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -45,8 +43,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Binder;
@@ -104,12 +100,14 @@ public class TrackerService extends Service implements APIRequestListener, Regis
 			// register any new users on the device
 			// this needs to complete before any trackers/quizzes can be sent back
 			
+
 			RegisterISchoolUsersTask task = new RegisterISchoolUsersTask(this);
 			task.setRegisterListener(this);
 			p = new Payload(prefs.getString(PrefsActivity.PREF_SERVER, this.getString(R.string.prefServerDefault))
 					+ MobileLearning.REGISTER_PATH);
 			task.execute(p);
 			/* ischool specific end */
+
 		}
 		return Service.START_NOT_STICKY;
 	}
@@ -143,7 +141,7 @@ public class TrackerService extends Service implements APIRequestListener, Regis
 			
 			JSONObject json = new JSONObject(response.getResultResponse());
 			Log.d(TAG,json.toString(4));
-			DbHelper db = new DbHelper(this);
+			DbHelper db = DbHelper.getInstance(this);
 			for (int i = 0; i < (json.getJSONArray("courses").length()); i++) {
 				JSONObject json_obj = (JSONObject) json.getJSONArray("courses").get(i);
 				String shortName = json_obj.getString("shortname");
@@ -159,7 +157,6 @@ public class TrackerService extends Service implements APIRequestListener, Regis
 					}
 				}
 			}
-			DatabaseManager.getInstance().closeDatabase();
 			
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -194,9 +191,8 @@ public class TrackerService extends Service implements APIRequestListener, Regis
 		// send quiz results
 		if(app.omSubmitQuizAttemptsTask == null){
 			Log.d(TAG,"Submitting quiz task");
-			DbHelper db = new DbHelper(this);
+			DbHelper db = DbHelper.getInstance(this);
 			ArrayList<QuizAttempt> unsent = db.getUnsentQuizAttempts();
-			DatabaseManager.getInstance().closeDatabase();
 	
 			if (unsent.size() > 0){
 				Payload p = new Payload(unsent);
