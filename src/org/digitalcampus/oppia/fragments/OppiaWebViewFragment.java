@@ -30,12 +30,14 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.LinearLayout.LayoutParams;
 
+import org.xwalk.core.XWalkView;
+
 public class OppiaWebViewFragment extends Fragment{
 
 	public static final String TAG = OppiaWebViewFragment.class.getSimpleName();
 	private static final String TAG_ID = "OppiaWebViewFragment_TAG_ID";
 	
-	private WebView webView;
+	private XWalkView webView;
 	private String url;
 	private int id;
 	private SharedPreferences prefs;
@@ -73,12 +75,11 @@ public class OppiaWebViewFragment extends Fragment{
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		
-		webView = (WebView) super.getActivity().findViewById(this.id);
-		webView.getSettings().setJavaScriptEnabled(true);
+		webView = (XWalkView) super.getActivity().findViewById(this.id);
 		int defaultFontSize = Integer.parseInt(prefs.getString(PrefsActivity.PREF_TEXT_SIZE, "16"));
 		webView.getSettings().setDefaultFontSize(defaultFontSize);
 		url = (String) getArguments().getString(OppiaWebViewFragment.TAG);
-		webView.loadUrl(url);
+		webView.load(url, null);
 
 	}
 
