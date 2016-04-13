@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">iSchool Zambia</string>
-    <string name="prefServerDefault">http://ischool.oppia-mobile.org/</string>
+    <string name="app_name">Zambia eHealth Training</string>
+    <string name="prefServerDefault">https://ischool.oppia-mobile.org/</string>
     <string name="prefServerTimeoutConnectionDefault">60000</string>
     <string name="prefServerTimeoutResponseDefault">60000</string>
 </resources>
