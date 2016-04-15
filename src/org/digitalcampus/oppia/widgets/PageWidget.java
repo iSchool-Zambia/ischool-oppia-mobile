@@ -57,10 +57,12 @@ import android.webkit.WebViewClient;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.Toast;
 
+import org.xwalk.core.XWalkView;
+
 public class PageWidget extends WidgetFactory {
 
 	public static final String TAG = PageWidget.class.getSimpleName();
-	private WebView wv;
+	private XWalkView wv;
 
 	
 	public static PageWidget newInstance(Activity activity, Course course, boolean isBaseline) {
@@ -105,7 +107,7 @@ public class PageWidget extends WidgetFactory {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		wv = (WebView) super.getActivity().findViewById(activity.getActId());
+		wv = (XWalkView) super.getActivity().findViewById(activity.getActId());
 		// get the location data
 		String url = course.getLocation()
 				+ activity.getLocation(prefs.getString(PrefsActivity.PREF_LANGUAGE, Locale.getDefault()
@@ -114,81 +116,7 @@ public class PageWidget extends WidgetFactory {
 		int defaultFontSize = Integer.parseInt(prefs.getString(PrefsActivity.PREF_TEXT_SIZE, "16"));
 		wv.getSettings().setDefaultFontSize(defaultFontSize);
 
-		try {
-			wv.getSettings().setJavaScriptEnabled(true);
-            //We inject the interface to launch intents from the HTML
-            wv.addJavascriptInterface(
-                    new JSInterfaceForResourceImages(this.getActivity(), course.getLocation()),
-                    JSInterfaceForResourceImages.InterfaceExposedName);
-
-			wv.loadDataWithBaseURL("file://" + course.getLocation() + File.separator, FileUtils.readFile(url), "text/html", "utf-8", null);
-		} catch (IOException e) {
-			wv.loadUrl("file://" + url);
-		}
-
-
-		wv.setWebViewClient(new WebViewClient() {
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                //We execute the necessary JS code to bind click on images with our JavascriptInterface
-                view.loadUrl(JSInterfaceForResourceImages.JSInjection);
-            }
-
-            // set up the page to intercept videos
-			@Override
-			public boolean shouldOverrideUrlLoading(WebView view, String url) {
-
-				if (url.contains("/video/")) {
-					// extract video name from url
-					int startPos = url.indexOf("/video/") + 7;
-					String mediaFileName = url.substring(startPos, url.length());
-
-					// check video file exists
-					boolean exists = Storage.mediaFileExists(PageWidget.super.getActivity(), mediaFileName);
-					if (!exists) {
-						Log.d(TAG,PageWidget.super.getActivity().getString(R.string.error_media_not_found, mediaFileName));
-						Toast.makeText(PageWidget.super.getActivity(), PageWidget.super.getActivity().getString(R.string.error_media_not_found, mediaFileName),
-								Toast.LENGTH_LONG).show();
-						return true;
-					} else {
-						Log.d(TAG,"Media found: " + mediaFileName);
-					}
-
-					String mimeType = FileUtils.getMimeType(Storage.getMediaPath(PageWidget.super.getActivity()) + mediaFileName);
-
-					if (!FileUtils.supportedMediafileType(mimeType)) {
-						Toast.makeText(PageWidget.super.getActivity(), PageWidget.super.getActivity().getString(R.string.error_media_unsupported, mediaFileName),
-								Toast.LENGTH_LONG).show();
-						return true;
-					}
-					
-					Intent intent = new Intent(PageWidget.super.getActivity(), VideoPlayerActivity.class);
-					Bundle tb = new Bundle();
-					tb.putSerializable(VideoPlayerActivity.MEDIA_TAG, mediaFileName);
-					tb.putSerializable(Activity.TAG, activity);
-					tb.putSerializable(Course.TAG, course);
-					intent.putExtras(tb);
-					startActivity(intent);
-					return true;
-					
-				} else {
-					
-					try {
-						Intent intent = new Intent(Intent.ACTION_VIEW);
-						Uri data = Uri.parse(url);
-						intent.setData(data);
-						PageWidget.super.getActivity().startActivity(intent);
-					} catch (ActivityNotFoundException anfe) {
-						// do nothing
-					}
-					// launch action in mobile browser - not the webview
-					// return true so doesn't follow link within webview
-					return true;
-				}
-
-			}
-		});
+		wv.load("file://" + url, null);
 	}
 
 	public void setIsBaseline(boolean isBaseline) {
