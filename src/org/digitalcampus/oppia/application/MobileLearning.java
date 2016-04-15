@@ -68,7 +68,7 @@ public class MobileLearning extends Application {
     public static final boolean ADMIN_PROTECT_COURSE_UPDATE = true;
 
 	// general other settings
-	public static final String MINT_API_KEY = "83cde1f5";
+	public static final String MINT_API_KEY = "26c9c657";
 	public static final int DOWNLOAD_COURSES_DISPLAY = 1; //this no of courses must be displayed for the 'download more courses' option to disappear
 	public static final int PASSWORD_MIN_LENGTH = 6;
 	public static final int PAGE_READ_TIME = 3;
@@ -88,7 +88,7 @@ public class MobileLearning extends Application {
 	public static final boolean MENU_ALLOW_MONITOR = true;
 	public static final boolean MENU_ALLOW_LOGOUT = true;
 
-    public static final boolean SESSION_EXPIRATION_ENABLED = true; // whether to force users to be logged out after inactivity
+    public static final boolean SESSION_EXPIRATION_ENABLED = false; // whether to force users to be logged out after inactivity
     public static final int SESSION_EXPIRATION_TIMEOUT = 15; // no seconds before user is logged out for inactivity
 	
 	public static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
@@ -96,7 +96,10 @@ public class MobileLearning extends Application {
 	public static final DateTimeFormatter TIME_FORMAT = DateTimeFormat.forPattern("HH:mm:ss");
 	public static final int MAX_TRACKER_SUBMIT = 10;
 	public static final String[] SUPPORTED_ACTIVITY_TYPES = {"page","quiz","resource","feedback","url"};
-	
+
+    public static final String DEVICEADMIN_ADD_PATH = OPPIAMOBILE_API + "device/register/";
+    public static final boolean DEVICEADMIN_ENABLED = false;
+
 	// only used in case a course doesn't have any lang specified
 	public static final String DEFAULT_LANG = "en";
 	

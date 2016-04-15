@@ -26,9 +26,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.application.AdminSecurityManager;
 import org.digitalcampus.oppia.utils.ui.SimpleAnimator;
-import org.ischool.zambia.oppia.R;
 
 public class PasswordDialogFragment extends DialogFragment {
 

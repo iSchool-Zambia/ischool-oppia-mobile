@@ -18,7 +18,6 @@
 
 package org.digitalcampus.oppia.utils.storage;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.Fragment;
@@ -39,6 +38,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+
 import org.ischool.zambia.oppia.R;
 import org.digitalcampus.oppia.listener.ListInnerBtnOnClickListener;
 
@@ -78,12 +78,10 @@ public class GrantStorageAccessFragment extends Fragment implements ListInnerBtn
         else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
             startActivityForResult(intent, REQUEST_GRANT_CODE);
-
-		       }
+        }
     }
 
     @Override
-    @SuppressLint("NewApi")
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
         if (requestCode == REQUEST_GRANT_CODE && resultCode == Activity.RESULT_OK) {
             Uri treeUri = resultData.getData();

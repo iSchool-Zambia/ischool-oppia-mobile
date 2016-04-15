@@ -29,7 +29,6 @@ import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
 import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
 import org.digitalcampus.oppia.adapter.ActivityPagerAdapter;
 import org.digitalcampus.oppia.adapter.SectionListAdapter;
-import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
 import org.digitalcampus.oppia.application.SessionManager;
@@ -180,9 +179,8 @@ public class CourseActivity extends AppActivity implements ActionBar.TabListener
         WidgetFactory currentWidget = (WidgetFactory) apAdapter.getItem(currentActivityNo);
         currentWidget.resumeTimeTracking();
 
-        DbHelper db = new DbHelper(this);
+        DbHelper db = DbHelper.getInstance(this);
         userID = db.getUserId(SessionManager.getUsername(this));
-        DatabaseManager.getInstance().closeDatabase();
     }
 	
 	@Override
@@ -356,9 +354,8 @@ public class CourseActivity extends AppActivity implements ActionBar.TabListener
         if ((newTab == 0) || (newTab <= currentActivityNo)) return true;
         Activity previousActivity = activities.get(newTab - 1);
         //the user can navigate to the activity if its directly preceding one is completed
-        DbHelper db = new DbHelper(this);
+        DbHelper db = DbHelper.getInstance(this);
         boolean actCompleted = db.activityCompleted(course.getCourseId(), previousActivity.getDigest(), userID);
-        DatabaseManager.getInstance().closeDatabase();
         return actCompleted;
     }
 

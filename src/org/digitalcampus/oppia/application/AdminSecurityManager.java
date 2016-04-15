@@ -21,8 +21,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import org.digitalcampus.oppia.activity.PrefsActivity;
 import org.ischool.zambia.oppia.R;
+import org.digitalcampus.oppia.activity.PrefsActivity;
 
 
 public class AdminSecurityManager {

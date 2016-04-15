@@ -57,9 +57,10 @@ public class DbHelper extends SQLiteOpenHelper {
 
 	static final String TAG = DbHelper.class.getSimpleName();
 	static final String DB_NAME = "mobilelearning.db";
-	static final int DB_VERSION = 24;
+	static final int DB_VERSION = 25;
 
-	private static SQLiteDatabase db;
+    private static DbHelper instance;
+	private SQLiteDatabase db;
 	private SharedPreferences prefs;
 	
 	private static final String COURSE_TABLE = "Module";
@@ -96,6 +97,7 @@ public class DbHelper extends SQLiteOpenHelper {
 	private static final String TRACKER_LOG_C_INPROGRESS = "loginprogress";
 	private static final String TRACKER_LOG_C_COMPLETED = "completed";
 	private static final String TRACKER_LOG_C_USERID = "userid";
+	private static final String TRACKER_LOG_C_TYPE = "type";
 	
 	private static final String QUIZATTEMPTS_TABLE = "results";
 	private static final String QUIZATTEMPTS_C_ID = BaseColumns._ID;
@@ -131,24 +133,20 @@ public class DbHelper extends SQLiteOpenHelper {
     private static final String USER_PREFS_C_USERNAME = "username";
     private static final String USER_PREFS_C_PREFKEY = "preference";
     private static final String USER_PREFS_C_PREFVALUE = "value";
-	
-    public void beginTransaction(){
-        db.beginTransaction();
-    }
-    public void endTransaction(boolean success){
-        if (success){
-            db.setTransactionSuccessful();
-        }
-        db.endTransaction();
-    }
 
 	// Constructor
-	public DbHelper(Context ctx) { //
+	private DbHelper(Context ctx) { //
 		super(ctx, DB_NAME, null, DB_VERSION);
 		prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-		DatabaseManager.initializeInstance(this);
-		db = DatabaseManager.getInstance().openDatabase();
+        db = this.getWritableDatabase();
 	}
+
+    public static synchronized DbHelper getInstance(Context ctx){
+        if (instance == null){
+            instance = new DbHelper(ctx.getApplicationContext());
+        }
+        return instance;
+    }
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
@@ -160,6 +158,16 @@ public class DbHelper extends SQLiteOpenHelper {
 		createUserTable(db);
         createUserPrefsTable(db);
 	}
+
+    public void beginTransaction(){
+        db.beginTransaction();
+    }
+    public void endTransaction(boolean success){
+        if (success){
+            db.setTransactionSuccessful();
+        }
+        db.endTransaction();
+    }
 
 	public void createCourseTable(SQLiteDatabase db){
 		String m_sql = "create table " + COURSE_TABLE + " (" + COURSE_C_ID + " integer primary key autoincrement, "
@@ -197,7 +205,8 @@ public class DbHelper extends SQLiteOpenHelper {
 				TRACKER_LOG_C_SUBMITTED + " integer default 0, " + 
 				TRACKER_LOG_C_INPROGRESS + " integer default 0, " +
 				TRACKER_LOG_C_COMPLETED + " integer default 0, " + 
-				TRACKER_LOG_C_USERID + " integer default 0 " +
+				TRACKER_LOG_C_USERID + " integer default 0, " +
+				TRACKER_LOG_C_TYPE + " text " +
 				")";
 		db.execSQL(l_sql);
 	}
@@ -403,6 +412,12 @@ public class DbHelper extends SQLiteOpenHelper {
             String sql1 = "ALTER TABLE " + COURSE_TABLE + " ADD COLUMN " + COURSE_C_SEQUENCING + " text default '"+Course.SEQUENCING_MODE_NONE+"';";
             db.execSQL(sql1);
         }
+
+		if(oldVersion <= 24 && newVersion >= 25){
+			// add field "type" to Tracker table
+			String sql1 = "ALTER TABLE " + TRACKER_LOG_TABLE + " ADD COLUMN " + TRACKER_LOG_C_TYPE + " text ;";
+			db.execSQL(sql1);
+		}
 	}
 
 	public void updateV43(long userId){
@@ -815,12 +830,10 @@ public class DbHelper extends SQLiteOpenHelper {
 		// find if attempted
 		String s1 = QUIZATTEMPTS_C_USERID + "=? AND " + QUIZATTEMPTS_C_ACTIVITY_DIGEST +"=?";
 		String[] args1 = new String[] { String.valueOf(userId), digest };
-
-		Cursor c1 = db.query(QUIZATTEMPTS_TABLE, null, s1, args1, null, null, QUIZATTEMPTS_C_DATETIME + " ASC", ISchool.SCORECARD_MAX_QUIZ_ATTEMPTS);
+		Cursor c1 = db.query(QUIZATTEMPTS_TABLE, null, s1, args1, null, null, null);
 		if (c1.getCount() == 0){
 			return qs;
 		}
-		
 		c1.moveToFirst();
 		while (c1.isAfterLast() == false) {
 			float userScore = c1.getFloat(c1.getColumnIndex(QUIZATTEMPTS_C_SCORE));
@@ -831,9 +844,6 @@ public class DbHelper extends SQLiteOpenHelper {
 				qs.setPassed(true);
 			}
 			qs.setMaxScore(c1.getFloat(c1.getColumnIndex(QUIZATTEMPTS_C_MAXSCORE)));
-			if (c1.getInt(c1.getColumnIndex(QUIZATTEMPTS_C_PASSED)) != 0){
-				qs.setPassed(true);
-			}
 			c1.moveToNext();
 		}
 		c1.close();
@@ -841,8 +851,7 @@ public class DbHelper extends SQLiteOpenHelper {
 		
 		return qs;
 	}
-	
-	public void insertTracker(int courseId, String digest, String data, boolean completed){
+	public void insertTracker(int courseId, String digest, String data, String type, boolean completed){
 		//get current user id
 		long userId = this.getUserId(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
 		
@@ -852,6 +861,7 @@ public class DbHelper extends SQLiteOpenHelper {
 		values.put(TRACKER_LOG_C_DATA, data);
 		values.put(TRACKER_LOG_C_COMPLETED, completed);
 		values.put(TRACKER_LOG_C_USERID, userId);
+		values.put(TRACKER_LOG_C_TYPE, type);
 		db.insertOrThrow(TRACKER_LOG_TABLE, null, values);
 	}
 	
@@ -1060,20 +1070,25 @@ public class DbHelper extends SQLiteOpenHelper {
 		c.moveToFirst();
 
 		ArrayList<Object> sl = new ArrayList<Object>();
-		while (c.isAfterLast() == false) {
+		while (!c.isAfterLast()) {
 			TrackerLog so = new TrackerLog();
+			String digest = c.getString(c.getColumnIndex(TRACKER_LOG_C_ACTIVITYDIGEST));
 			so.setId(c.getLong(c.getColumnIndex(TRACKER_LOG_C_ID)));
-			so.setDigest(c.getString(c.getColumnIndex(TRACKER_LOG_C_ACTIVITYDIGEST)));
+			so.setDigest(digest);
 			String content = "";
 			try {
 				JSONObject json = new JSONObject();
 				json.put("data", c.getString(c.getColumnIndex(TRACKER_LOG_C_DATA)));
 				json.put("tracker_date", c.getString(c.getColumnIndex(TRACKER_LOG_C_DATETIME)));
-				json.put("digest", c.getString(c.getColumnIndex(TRACKER_LOG_C_ACTIVITYDIGEST)));
 				json.put("completed", c.getInt(c.getColumnIndex(TRACKER_LOG_C_COMPLETED)));
+				json.put("digest", (digest!=null) ? digest : "");
 				Course m = this.getCourse(c.getLong(c.getColumnIndex(TRACKER_LOG_C_COURSEID)), userId);
 				if (m != null){
 					json.put("course", m.getShortname());
+				}
+				String trackerType = c.getString(c.getColumnIndex(TRACKER_LOG_C_TYPE));
+				if (trackerType != null){
+					json.put("type",trackerType);
 				}
 				content = json.toString();
 			} catch (JSONException e) {

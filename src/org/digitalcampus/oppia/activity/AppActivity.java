@@ -31,14 +31,12 @@ import org.ischool.zambia.oppia.R;
 import org.ischool.zambia.oppia.application.ISchool;
 import org.ischool.zambia.oppia.exceptions.ISchoolLoginException;
 import org.ischool.zambia.oppia.exceptions.UserIdFormatException;
-import org.digitalcampus.oppia.application.DatabaseManager;
 import org.digitalcampus.oppia.application.DbHelper;
 import org.digitalcampus.oppia.application.MobileLearning;
 import org.digitalcampus.oppia.application.ScheduleReminders;
 import org.digitalcampus.oppia.application.SessionManager;
 import org.digitalcampus.oppia.exception.UserNotFoundException;
 import org.digitalcampus.oppia.model.User;
-
 
 public class AppActivity extends FragmentActivity {
 	
@@ -65,11 +63,10 @@ public class AppActivity extends FragmentActivity {
 		return true;
 	}
 
-	
-	@Override
-	protected void onResume(){
-		super.onResume();
-		/* ischool specific start */
+    @Override
+    public void onResume(){
+        super.onResume();
+        /* ischool specific start */
 		try {
 			ISchool.loginUser(this);
 		} catch (ISchoolLoginException isle){
@@ -80,10 +77,9 @@ public class AppActivity extends FragmentActivity {
 		
 		try {
 			TextView uTV = (TextView) this.findViewById(R.id.ischool_username);
-			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-			DbHelper db = new DbHelper(this);
+			DbHelper db = DbHelper.getInstance(this);
 			try {
-				User u = db.getUser(prefs.getString(PrefsActivity.PREF_USER_NAME, ""));
+				User u = db.getUser(SessionManager.getUsername(this));
 				
 				String username;
 				if (u.getFirstname() != null && !u.getFirstname().equals("")){
@@ -95,7 +91,6 @@ public class AppActivity extends FragmentActivity {
 			} catch (UserNotFoundException unfe){
 				
 			}
-			DatabaseManager.getInstance().closeDatabase();
 			
 		} catch (NullPointerException npe){
 			
