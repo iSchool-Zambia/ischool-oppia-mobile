@@ -72,6 +72,7 @@ public class ScorecardPieChart {
         segmentNotStarted.setTitle( (showSegementTitles && numNotStarted != 0)? "Not Started (" + numNotStarted + ")" : "");
         segmentNotStarted.setValue(numNotStarted);
         pie.addSeries(segmentNotStarted, sfNotStarted);
+        pie.addSeries(segmentStarted, sfNotStarted);
 
         pie.getRenderer(PieRenderer.class).setDonutSize(donutSize, PieRenderer.DonutMode.PERCENT);
         pie.getBorderPaint().setColor(Color.TRANSPARENT);
@@ -88,6 +89,8 @@ public class ScorecardPieChart {
 	}
 
     public void animate(int numCompleted, int numStarted, int numNotStarted, boolean delayedStart){
+
+        numNotStarted = Math.max(0, numNotStarted);
         int total = numCompleted + numStarted + numNotStarted;
         //We create the thre valueHolders for the animation
         PropertyValuesHolder completedHolder = PropertyValuesHolder.ofFloat("completed", 0, numCompleted);
